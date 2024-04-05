@@ -27,28 +27,18 @@ func TestNextTokenSimple(t *testing.T) {
 
 	var lexedToken = New(input)
 
-	for i, tokenChar := range tests {
-		var decodedTokenChar = lexedToken.NextToken()
-
-		if decodedTokenChar.Type != tokenChar.expectedType {
-			t.Fatalf("tests[%d] - token_type wrong. expected=%q, got=%q", i, tokenChar.expectedType, decodedTokenChar.Type)
-		}
-
-		if decodedTokenChar.Literal != tokenChar.expectedLiteral {
-			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q", i, tokenChar.expectedLiteral, decodedTokenChar.Literal)
-		}
-	}
+	testLexedToken(t, lexedToken, tests)
 }
 
 func TestNextTokenComplex(t *testing.T) {
 	var input = `let five = 5;
-	let ten = 10;
+let ten = 10;
 
-	let add = fn(x, y) {
-		x + y;
-	};
-	
-	let result = add(five, ten);
+let add = fn(x, y) {
+	x + y;
+};
+
+let result = add(five, ten);
 	`
 
 	var tests = []TokenTest {
@@ -93,8 +83,12 @@ func TestNextTokenComplex(t *testing.T) {
 
 	var lexedToken = New(input)
 
+	testLexedToken(t, lexedToken, tests)
+} 
+
+func testLexedToken(t *testing.T, l *Lexer, tests []TokenTest) {
 	for i, tokenChar := range tests {
-		var decodedTokenChar = lexedToken.NextToken()
+		var decodedTokenChar = l.NextToken()
 
 		if decodedTokenChar.Type != tokenChar.expectedType {
 			t.Fatalf("tests[%d] - token_type wrong. expected=%q, got=%q", i, tokenChar.expectedType, decodedTokenChar.Type)
@@ -104,6 +98,4 @@ func TestNextTokenComplex(t *testing.T) {
 			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q", i, tokenChar.expectedLiteral, decodedTokenChar.Literal)
 		}
 	}
-
-
-} 
+}
