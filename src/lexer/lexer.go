@@ -32,6 +32,14 @@ func (lexer *Lexer) readChar() {
 	lexer.readPosition += 1
 }
 
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.readPosition]
+	}
+}
+
 // Read each character in the variable identifier moving along and return the entire identifier (we do an range on the slice, starting (position), ending (l.position) where the pointer has gotten up to) 
 func (l *Lexer) readIdentifier() string {
 	var position = l.position
@@ -58,7 +66,15 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 		case '=':
-			_token = newToken(token.ASSIGN, l.ch)
+			if l.peekChar() == '=' {
+				var currentCharacter = l.ch
+				l.readChar()
+
+				var literal = string(currentCharacter) + string(l.ch)
+				_token = token.Token{ Type: token.EQ, Literal: literal }
+			} else {
+				_token = newToken(token.ASSIGN, l.ch)
+			}
 		case ';':
 			_token = newToken(token.SEMICOLON, l.ch)
 		case '(':
@@ -76,7 +92,16 @@ func (l *Lexer) NextToken() token.Token {
 		case '-':
 			_token = newToken(token.MINUS, l.ch)
 		case '!':
-			_token = newToken(token.BANG, l.ch)
+			if l.peekChar() == '=' {
+				var currentCharacter = l.ch
+				l.readChar()
+
+				var literal = string(currentCharacter) + string(l.ch)
+				_token = token.Token{Type: token.NOT_EQ, Literal: literal}
+
+			} else {
+				_token = newToken(token.BANG, l.ch)
+			}
 		case '/':
 			_token = newToken(token.SLASH, l.ch)
 		case '*':
