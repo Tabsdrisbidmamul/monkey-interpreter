@@ -21,6 +21,8 @@ let foobar = 838383;
 	var parser = New(lexer)
 
 	var program = parser.ParseProgram() 
+	checkParserErrors(t, parser)
+
 	if program == nil {
 		t.Fatalf("ParseProgram() returned nil")
 	}
@@ -41,6 +43,27 @@ let foobar = 838383;
 			return
 		}
 	}
+}
+
+func TestBadParseAndSucceed(t *testing.T) {
+	var input = `
+let x 5;
+let = 10;
+let 838383;
+		`
+	
+		var lexer = lexer.New(input)
+		var parser = New(lexer)
+	
+		var program = parser.ParseProgram() 
+
+		if program == nil {
+			t.Fatalf("ParseProgram() returned nil")
+		}
+	
+		if len(parser.Errors()) < 3 {
+			t.Errorf("parser.error not 3, got=%d", len(parser.Errors()))
+		} 
 }
 
 func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentifier string) bool {
@@ -66,5 +89,20 @@ func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentifier 
 	}
 
 	return true
+}
 
+func checkParserErrors(t *testing.T, p *Parser) {
+	var errors = p.Errors()
+
+	if len(errors) == 0 {
+		return
+	}
+
+	t.Errorf("parser has %d errors", len(errors))
+
+	for _, msg := range errors {
+		t.Errorf("parser error: %q", msg)
+	}
+
+	t.FailNow()
 }
