@@ -22,7 +22,7 @@ let foobar = 838383;
 
 	var program = parser.ParseProgram() 
 	if program == nil {
-		t.Fatalf("ParseProgram() returned nul")
+		t.Fatalf("ParseProgram() returned nil")
 	}
 
 	if len(program.Statements) != 3 {
