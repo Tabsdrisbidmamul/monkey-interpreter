@@ -61,6 +61,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 		case token.LET:
 			return p.parseLetStatement()
+		
 		default:
 			return nil
 	}
@@ -105,4 +106,5 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 
 	return statement
 }
+
 
