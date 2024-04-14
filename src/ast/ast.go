@@ -48,7 +48,10 @@ func (p *Program) String() string {
 /* []Statements {
 	&LetStatement {
 		Token: {},
-		Name: {}
+		Name: Value: &Identifier {
+			Token: {},
+			Value: {}
+		},
 		Value: &Identifier {
 			Token: {},
 			Value: {}
