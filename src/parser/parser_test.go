@@ -13,6 +13,18 @@ type ExpectedIdentifierTest struct {
 func TestIdentifierExpression(t *testing.T) {
 	input := "foobar"
 
+	// In the program.Statements[] we have got one ExpressionStatement, the tree below is what we have got
+	/* Statements
+				 |
+	ExpressionStatement
+				 |
+	Token  Expression (Identifier implements Expression)
+						|
+					Identifier
+					   |
+					Token Value
+	*/
+
 	lexer := lexer.New(input)
 	parser := New(lexer)
 	program := parser.ParseProgram()

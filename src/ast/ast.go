@@ -94,22 +94,9 @@ func (ls *LetStatement) String() string {
 
 	return out.String()
 }
+
 func (ls *LetStatement) TokenLiteral() string {
 	return ls.Token.Literal
-}
-
-type Identifier struct {
-	Token token.Token // the token.IDENT token
-	Value string
-}
-
-// implements the Expression interface
-func (i *Identifier) expressionNode() {}
-func (i *Identifier) String() string {
-	return i.Value
-}
-func (i *Identifier) TokenLiteral() string {
-	return i.Token.Literal
 }
 
 type ReturnStatement struct {
@@ -133,6 +120,20 @@ func (rs *ReturnStatement) String() string {
 }
 func (rs *ReturnStatement) TokenLiteral() string {
 	return rs.Token.Literal
+}
+
+type Identifier struct {
+	Token token.Token // the token.IDENT token
+	Value string
+}
+
+// implements the Expression interface
+func (i *Identifier) expressionNode() {}
+func (i *Identifier) String() string {
+	return i.Value
+}
+func (i *Identifier) TokenLiteral() string {
+	return i.Token.Literal
 }
 
 
