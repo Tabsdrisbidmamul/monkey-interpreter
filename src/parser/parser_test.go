@@ -12,20 +12,20 @@ type ExpectedIdentifierTest struct {
 }
 
 type ExpectedPrefixTest struct {
-	input string
-	operator string
+	input        string
+	operator     string
 	integerValue int64
 }
 
 type ExpectedInfixTest struct {
-	input string
-	leftValue int64
-	operator string
+	input      string
+	leftValue  int64
+	operator   string
 	rightValue int64
 }
 
 func TestParsingInfixExpression(t *testing.T) {
-	infixTests := []ExpectedInfixTest {
+	infixTests := []ExpectedInfixTest{
 		{"5 + 5;", 5, "+", 5},
 		{"5 - 5;", 5, "-", 5},
 		{"5 * 5;", 5, "*", 5},
@@ -74,7 +74,7 @@ func TestParsingInfixExpression(t *testing.T) {
 }
 
 func TestParsingPrefixExpression(t *testing.T) {
-	prefixTests := []ExpectedPrefixTest {
+	prefixTests := []ExpectedPrefixTest{
 		{"!5", "!", 5},
 		{"-15", "-", 15},
 	}
@@ -184,7 +184,7 @@ func TestIdentifierExpression(t *testing.T) {
 
 	if identifier.TokenLiteral() != "foobar" {
 		t.Errorf("ident.TokenLiteral not %s. got=%s", "foobar",
-		identifier.TokenLiteral())
+			identifier.TokenLiteral())
 	}
 
 }
@@ -204,7 +204,7 @@ return 993322;
 
 	if len(program.Statements) != 3 {
 		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-		len(program.Statements))
+			len(program.Statements))
 	}
 
 	for _, statement := range program.Statements {
@@ -216,7 +216,7 @@ return 993322;
 
 		if returnStatement.TokenLiteral() != "return" {
 			t.Errorf("returnStmt.TokenLiteral not 'return', got %q",
-			returnStatement.TokenLiteral())
+				returnStatement.TokenLiteral())
 		}
 	}
 }
@@ -243,7 +243,7 @@ let foobar = 838383;
 			}
 		}
 	}
-	
+
 	There can n number LetStatements
 	statements
 			|
@@ -252,7 +252,7 @@ let foobar = 838383;
 	Token  Name Value
 								|
 						Token Value
-	*/ 
+	*/
 	// Token = token.Token {Type: token.LET, Literal: "let" }
 	// Name = &Identifier { Type: token.IDENT, Literal: "x" }
 	// Value = &Identifier { Type: token.INT, Literal: "5" }
@@ -260,7 +260,7 @@ let foobar = 838383;
 	var lexer = lexer.New(input)
 	var parser = New(lexer)
 
-	var program = parser.ParseProgram() 
+	var program = parser.ParseProgram()
 	checkParserErrors(t, parser)
 
 	if program == nil {
@@ -271,7 +271,7 @@ let foobar = 838383;
 		t.Fatalf("program.Statements does not contain 3 statements. got%d", len(program.Statements))
 	}
 
-	var tests = []ExpectedIdentifierTest {
+	var tests = []ExpectedIdentifierTest{
 		{"x"},
 		{"y"},
 		{"foobar"},
@@ -291,19 +291,19 @@ let x 5;
 let = 10;
 let 838383;
 		`
-	
-		var lexer = lexer.New(input)
-		var parser = New(lexer)
-	
-		var program = parser.ParseProgram() 
 
-		if program == nil {
-			t.Fatalf("ParseProgram() returned nil")
-		}
-	
-		if len(parser.Errors()) < 3 {
-			t.Errorf("parser.error not 3, got=%d", len(parser.Errors()))
-		} 
+	var lexer = lexer.New(input)
+	var parser = New(lexer)
+
+	var program = parser.ParseProgram()
+
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	if len(parser.Errors()) < 3 {
+		t.Errorf("parser.error not 3, got=%d", len(parser.Errors()))
+	}
 }
 
 // ------Helpers---------
@@ -327,12 +327,11 @@ func testIntegerLiteral(t *testing.T, integerLiteral ast.Expression, value int64
 	return true
 }
 
-
 func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentifier string) bool {
 	if statement.TokenLiteral() != "let" {
 		t.Errorf("statement.TokenLiteral() not 'let'. got=%q", statement.TokenLiteral())
 		return false
-	} 
+	}
 
 	letStatement, ok := statement.(*ast.LetStatement)
 	if !ok {
