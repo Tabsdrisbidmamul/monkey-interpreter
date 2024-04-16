@@ -13,32 +13,32 @@ const (
 	// This retains the order, which will be used for BIDMAS etc.
 	_ int = iota
 	LOWEST
-	EQUALS // ==
+	EQUALS      // ==
 	LESSGREATER // > OR <
-	SUM // +
-	PRODUCT // *
-	PREFIX // -X or !X
-	CALL // myFunc(X)
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunc(X)
 )
 
 type (
 	prefixParseFn func() ast.Expression
-	infixParseFn func(ast.Expression) ast.Expression	
+	infixParseFn  func(ast.Expression) ast.Expression
 )
 
 type Parser struct {
 	lexer *lexer.Lexer
 
-	curToken token.Token
+	curToken  token.Token
 	peekToken token.Token
-	errors []string
+	errors    []string
 
 	prefixParseFns map[token.TokenType]prefixParseFn
-	infixParseFns map[token.TokenType]infixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
-	var parser = &Parser{ lexer: l, errors: []string{} }
+	var parser = &Parser{lexer: l, errors: []string{}}
 
 	// read 2 tokens to curToken and peekToken are initialised
 	parser.curToken = parser.lexer.NextToken()
@@ -123,7 +123,6 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return statement
 }
 
-
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 	var statement = &ast.LetStatement{Token: p.curToken}
 
@@ -148,7 +147,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 // -----pre/in fix fns--------
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{
-		Token: p.curToken,
+		Token:    p.curToken,
 		Operator: p.curToken.Literal,
 	}
 
@@ -172,7 +171,7 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	return literal
 }
 
-func (p *Parser) parseIdentifier() ast.Expression{
+func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 

@@ -6,14 +6,14 @@ import (
 )
 
 type TokenTest struct {
-	expectedType token.TokenType
+	expectedType    token.TokenType
 	expectedLiteral string
 }
 
 func TestNextTokenSimple(t *testing.T) {
 	var input = "=+(){},;"
 
-	var tests = []TokenTest {
+	var tests = []TokenTest{
 		{token.ASSIGN, "="},
 		{token.PLUS, "+"},
 		{token.LPAREN, "("},
@@ -52,7 +52,7 @@ return false;
 10 != 9;
 	`
 
-	var tests = []TokenTest {
+	var tests = []TokenTest{
 		{token.LET, "let"},
 		{token.IDENT, "five"},
 		{token.ASSIGN, "="},
@@ -132,7 +132,7 @@ return false;
 	var lexedToken = New(input)
 
 	testLexedToken(t, lexedToken, tests)
-} 
+}
 
 func testLexedToken(t *testing.T, l *Lexer, tests []TokenTest) {
 	for i, tokenChar := range tests {
