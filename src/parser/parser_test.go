@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"monkey/ast"
 	"monkey/lexer"
 	"testing"
@@ -8,6 +9,49 @@ import (
 
 type ExpectedIdentifierTest struct {
 	expectedIdentifier string
+}
+
+type ExpectedPrefixTest struct {
+	input string
+	operator string
+	integerValue int64
+}
+
+func TestParsingPrefixExpression(t *testing.T) {
+	prefixTests := []ExpectedPrefixTest {
+		{"!5", "!", 5},
+		{"-15", "-", 15},
+	}
+
+	for _, testCase := range prefixTests {
+		lexer := lexer.New(testCase.input)
+		parser := New(lexer)
+		program := parser.ParseProgram()
+
+		checkParserErrors(t, parser)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain %d statements. got=%d\n", 1, len(program.Statements))
+		}
+
+		statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
+		expression, ok := statement.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("statement is not ast.PrefixExpression. got=%T", statement.Expression)
+		}
+
+		if expression.Operator != testCase.operator {
+			t.Fatalf("expression.Operator is not %s. got=%s", testCase.operator, expression.Operator)
+		}
+
+		if !testIntegerLiteral(t, expression.Right, testCase.integerValue) {
+			return
+		}
+	}
 }
 
 func TestIntegerLiteralExpression(t *testing.T) {
@@ -205,6 +249,28 @@ let 838383;
 			t.Errorf("parser.error not 3, got=%d", len(parser.Errors()))
 		} 
 }
+
+// ------Helpers---------
+func testIntegerLiteral(t *testing.T, integerLiteral ast.Expression, value int64) bool {
+	_integer, ok := integerLiteral.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("integerLiteral not *ast.IntegerLiteral. got=%T", integerLiteral)
+		return false
+	}
+
+	if _integer.Value != value {
+		t.Errorf("_integer.Value not %d. got=%d", value, _integer.Value)
+		return false
+	}
+
+	if _integer.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("_integer.TokenLiteral() not %d. got=%s", value, _integer.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
 
 func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentifier string) bool {
 	if statement.TokenLiteral() != "let" {
