@@ -43,34 +43,6 @@ func (p *Program) String() string {
 	return out.String()
 }
 
-// let x = 5
-// The node looks likes
-/* []Statements {
-	&LetStatement {
-		Token: {},
-		Name: Value: &Identifier {
-			Token: {},
-			Value: {}
-		},
-		Value: &Identifier {
-			Token: {},
-			Value: {}
-		}
-	}
-}
- 
-There can n number LetStatements
-statements
-     |
-LetStatements
-  |		  |     |
-Token  Name Value
-              |
-					Token Value
-*/ 
-// Token = token.Token {Type: token.LET, Literal: "let" }
-// Name = &Identifier { Type: token.IDENT, Literal: "x" }
-// Value = &Identifier { Type: token.INT, Literal: "5" }
 type LetStatement struct {
 	Token token.Token // the token.LET token
 	Name *Identifier
@@ -153,4 +125,18 @@ func (es *ExpressionStatement) String() string {
 }
 func (es *ExpressionStatement) TokenLiteral() string {
 	return es.Token.Literal
+}
+
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+// implements Expression interface
+func (il *IntegerLiteral) expressionNode() {}
+func (il *IntegerLiteral) TokenLiteral() string {
+	return il.Token.Literal
+}
+func (il *IntegerLiteral) String() string {
+	return il.Token.Literal
 }

@@ -10,6 +10,39 @@ type ExpectedIdentifierTest struct {
 	expectedIdentifier string
 }
 
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := "5;"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+	program := parser.ParseProgram()
+
+	checkParserErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	literal, ok := statement.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("expression not *ast.IntegerLiteral. got=%T", program.Statements[0])
+	}
+
+	if literal.Value != 5 {
+		t.Errorf("literal.Value not %d. got=%d", 5, literal.Value)
+	}
+
+	if literal.TokenLiteral() != "5" {
+		t.Errorf("literal.TokenLiteral not %s. got=%s", "5",
+			literal.TokenLiteral())
+	}
+}
+
 func TestIdentifierExpression(t *testing.T) {
 	input := "foobar"
 
@@ -94,6 +127,35 @@ let x = 5;
 let y = 10;
 let foobar = 838383;
 	`
+
+	// let x = 5
+	// The node looks likes
+	/* []Statements {
+		&LetStatement {
+			Token: {},
+			Name: Value: &Identifier {
+				Token: {},
+				Value: {}
+			},
+			Value: &Identifier {
+				Token: {},
+				Value: {}
+			}
+		}
+	}
+	
+	There can n number LetStatements
+	statements
+			|
+	LetStatements
+		|		  |     |
+	Token  Name Value
+								|
+						Token Value
+	*/ 
+	// Token = token.Token {Type: token.LET, Literal: "let" }
+	// Name = &Identifier { Type: token.IDENT, Literal: "x" }
+	// Value = &Identifier { Type: token.INT, Literal: "5" }
 
 	var lexer = lexer.New(input)
 	var parser = New(lexer)
