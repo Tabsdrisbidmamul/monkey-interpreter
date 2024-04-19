@@ -154,13 +154,13 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	// fmt.Printf("curToken is %+v\n", p.curToken)
 
 	/*
-			   -5
-			   PrefixExpression { Token: {Type: -, Literal: -}, Operator: -, Right: 5 }
+		      -5
+		      PrefixExpression { Token: {Type: -, Literal: -}, Operator: -, Right: 5 }
 
-			   5 + 5
-			   InfixExpression {Token:{Type:+ Literal:+} Left:5 Operator:+ Right:5}
+		      5 + 5
+		      InfixExpression {Token:{Type:+ Literal:+} Left:5 Operator:+ Right:5}
 
-		     The flow for PrefixExpression:
+		      The flow for PrefixExpression:
 		      - We will get the prefix function, and obtain the left expression struct, the next line will either be a semi colon or the next token's precedence is LOWEST, which will stop lookup
 
 		      - Returning back the PrefixExpression
@@ -171,6 +171,31 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		      - We successfully obtain the infix function, move the pointer ahead to the next operand in the calculation.
 
 		      - We pass in the previous left exp into the infix function, and get back the InfixExpression struct
+
+		                                          Left
+		      1 + 2 + 3 will be serialised to ((1 + 2) + 3)
+		                                                Right
+		      AST tree will look
+
+		      InfixExpression struct {
+		        Token    token.Token
+		        Left     Expression
+		        Operator string
+		        Right    Expression
+		      }
+
+		      InfixExpression
+		              |
+		      |------------------------ |
+		InfixExpression (left)    IntegerLiteral (Right)
+		      |                         |
+		-------------------             3
+		|                 |
+		IntegerLiteral   IntegerLiteral
+		|                   |
+		1                   2
+
+
 	*/
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
