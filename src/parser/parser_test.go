@@ -4,8 +4,14 @@ import (
 	"fmt"
 	"monkey/ast"
 	"monkey/lexer"
+	"strconv"
 	"testing"
 )
+
+type ExpectedBooleanTest struct {
+	input           string
+	expectedBoolean bool
+}
 
 type ExpectedIdentifierTest struct {
 	expectedIdentifier string
@@ -22,6 +28,33 @@ type ExpectedInfixTest struct {
 	leftValue  int64
 	operator   string
 	rightValue int64
+}
+
+func TestBooleanExpression(t *testing.T) {
+	tests := []ExpectedBooleanTest{
+		{input: "true;", expectedBoolean: true},
+		{input: "false;", expectedBoolean: false},
+	}
+
+	for _, tc := range tests {
+		lexer := lexer.New(tc.input)
+		parser := New(lexer)
+		program := parser.ParseProgram()
+
+		checkParserErrors(t, parser)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+		}
+
+		statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
+		testLiteralExpression(t, statement.Expression, tc.expectedBoolean)
+	}
+
 }
 
 func TestOperatorPrecedenceParsing(t *testing.T) {
@@ -344,6 +377,8 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 		return testIntegerLiteral(t, exp, int64(v))
 	case int64:
 		return testIntegerLiteral(t, exp, v)
+	case bool:
+		return testBooleanLiteral(t, exp, v)
 	case string:
 		return testIdentifier(t, exp, v)
 	}
@@ -375,6 +410,26 @@ func testInfixExpression(t *testing.T, exp ast.Expression, left interface{}, ope
 	return true
 }
 
+func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
+	boolean, ok := exp.(*ast.Boolean)
+	if !ok {
+		t.Errorf("exp not *ast.Boolean. got=%T", exp)
+		return false
+	}
+
+	if boolean.Value != value {
+		t.Errorf("boolean.Value not %t. got=%t", value, boolean.Value)
+		return false
+	}
+
+	if boolean.TokenLiteral() != strconv.FormatBool(value) {
+		t.Errorf("boolean.TokenLiteral() not %t. got=%s", value, boolean.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
 func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 	identifier, ok := exp.(*ast.Identifier)
 	if !ok {
@@ -388,7 +443,7 @@ func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 	}
 
 	if identifier.TokenLiteral() != value {
-		t.Errorf("identifier.Value not %s. got=%s", value, identifier.TokenLiteral())
+		t.Errorf("identifier.TokenLiteral() not %s. got=%s", value, identifier.TokenLiteral())
 		return false
 	}
 
