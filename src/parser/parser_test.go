@@ -207,16 +207,7 @@ func TestParsingPrefixExpression(t *testing.T) {
 			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 		}
 
-		expression, ok := statement.Expression.(*ast.PrefixExpression)
-		if !ok {
-			t.Fatalf("statement is not ast.PrefixExpression. got=%T", statement.Expression)
-		}
-
-		if expression.Operator != testCase.operator {
-			t.Fatalf("expression.Operator is not %s. got=%s", testCase.operator, expression.Operator)
-		}
-
-		if !testLiteralExpression(t, expression.Right, testCase.value) {
+		if !testPrefixExpression(t, statement.Expression, testCase.operator, testCase.value) {
 			return
 		}
 	}
@@ -431,6 +422,25 @@ func testInfixExpression(t *testing.T, exp ast.Expression, left interface{}, ope
 	}
 
 	if !testLiteralExpression(t, opExp.Right, right) {
+		return false
+	}
+
+	return true
+}
+
+func testPrefixExpression(t *testing.T, exp ast.Expression, operator string, right interface{}) bool {
+	expression, ok := exp.(*ast.PrefixExpression)
+	if !ok {
+		t.Fatalf("exp is not ast.PrefixExpression. got=%T", exp)
+		return false
+	}
+
+	if expression.Operator != operator {
+		t.Fatalf("expression.Operator is not %s. got=%s", operator, expression.Operator)
+		return false
+	}
+
+	if !testLiteralExpression(t, expression.Right, right) {
 		return false
 	}
 
