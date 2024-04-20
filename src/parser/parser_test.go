@@ -8,6 +8,11 @@ import (
 	"testing"
 )
 
+type ExpectedPrecedenceTest struct {
+	input    string
+	expected string
+}
+
 type ExpectedBooleanTest struct {
 	input           string
 	expectedBoolean bool
@@ -58,10 +63,7 @@ func TestBooleanExpression(t *testing.T) {
 }
 
 func TestOperatorPrecedenceParsing(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
+	tests := []ExpectedPrecedenceTest{
 		{
 			"-a * b",
 			"((-a) * b)",
@@ -129,6 +131,26 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{
 			"3 < 5 == true",
 			"((3 < 5) == true)",
+		},
+		{
+			"1 + (2 + 3) + 4",
+			"((1 + (2 + 3)) + 4)",
+		},
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
+		{
+			"2 / (5 + 5)",
+			"(2 / (5 + 5))",
+		},
+		{
+			"-(5 + 5)",
+			"(-(5 + 5))",
+		},
+		{
+			"!(true == true)",
+			"(!(true == true))",
 		},
 	}
 
