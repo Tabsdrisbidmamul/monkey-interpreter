@@ -65,6 +65,7 @@ func New(l *lexer.Lexer) *Parser {
 	parser.registerPrefix(token.TRUE, parser.parseBoolean)
 	parser.registerPrefix(token.FALSE, parser.parseBoolean)
 	parser.registerPrefix(token.LPAREN, parser.parseGroupedExpression)
+	parser.registerPrefix(token.IF, parser.parseIfExpression)
 
 	// initialise the infixParseFns map, and register all infixes to maps
 	parser.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -265,6 +266,56 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{Token: p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+	expression.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	expression.Consequence = p.parseBlockStatement()
+
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken()
+
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+
+		expression.Alternative = p.parseBlockStatement()
+	}
+
+	return expression
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: p.curToken}
+	block.Statements = make([]ast.Statement, 0)
+
+	p.nextToken()
+
+	for !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
+		statement := p.parseStatement()
+		if statement != nil {
+			block.Statements = append(block.Statements, statement)
+		}
+		p.nextToken()
+	}
+
+	return block
+}
+
 func (p *Parser) parseGroupedExpression() ast.Expression {
 	p.nextToken()
 
@@ -341,12 +392,17 @@ func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
+// Will move the token to the next token successful matches
 func (p *Parser) expectPeek(t token.TokenType) bool {
 	if p.peekTokenIs(t) {
 		p.nextToken()
 		return true
 	} else {
 		p.peekError(t)
+
+		msg := fmt.Sprintf("expected token was not %+v. got=%+v", t, p.peekToken)
+		p.errors = append(p.errors, msg)
+
 		return false
 	}
 
