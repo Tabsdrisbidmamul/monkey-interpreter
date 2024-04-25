@@ -8,6 +8,12 @@ import (
 	"testing"
 )
 
+type ExpectedLetStatementTest struct {
+	input              string
+	expectedIdentifier string
+	expectedValue      interface{}
+}
+
 type ExpectedCallArgumentTest struct {
 	input         string
 	expectedIdent string
@@ -565,11 +571,11 @@ return 993322;
 }
 
 func TestLetStatements(t *testing.T) {
-	var input = `
-let x = 5;
-let y = 10;
-let foobar = 838383;
-	`
+	tests := []ExpectedLetStatementTest{
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
+	}
 
 	// let x = 5
 	// The node looks likes
@@ -600,32 +606,28 @@ let foobar = 838383;
 	// Name = &Identifier { Type: token.IDENT, Literal: "x" }
 	// Value = &Identifier { Type: token.INT, Literal: "5" }
 
-	var lexer = lexer.New(input)
-	var parser = New(lexer)
+	for _, tc := range tests {
+		var lexer = lexer.New(tc.input)
+		var parser = New(lexer)
 
-	var program = parser.ParseProgram()
-	checkParserErrors(t, parser)
+		var program = parser.ParseProgram()
+		checkParserErrors(t, parser)
 
-	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain %d statements. got=%d", 1, len(program.Statements))
+		}
 
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got%d", len(program.Statements))
-	}
+		statement := program.Statements[0]
+		if !testLetStatement(t, statement, tc.expectedIdentifier) {
+			return
+		}
 
-	var tests = []ExpectedIdentifierTest{
-		{"x"},
-		{"y"},
-		{"foobar"},
-	}
-
-	for i, tok := range tests {
-		var statement = program.Statements[i]
-		if !testLetStatement(t, statement, tok.expectedIdentifier) {
+		value := statement.(*ast.LetStatement).Value
+		if !testLiteralExpression(t, value, tc.expectedValue) {
 			return
 		}
 	}
+
 }
 
 func TestBadParseAndSucceed(t *testing.T) {
