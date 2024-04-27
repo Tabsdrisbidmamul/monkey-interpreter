@@ -7,9 +7,26 @@ import (
 	"testing"
 )
 
+type ExpectedBooleanTest struct {
+	input    string
+	expected bool
+}
+
 type ExpectedIntegerTest struct {
 	input    string
 	expected int64
+}
+
+func TestEvalBooleanExpression(t *testing.T) {
+	tests := []ExpectedBooleanTest{
+
+		{"false", false},
+	}
+
+	for _, tc := range tests {
+		evaluated := testEval(tc.input)
+		testBooleanObject(t, evaluated, tc.expected)
+	}
 }
 
 func TestEvalIntegerExpression(t *testing.T) {
@@ -24,12 +41,29 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 }
 
+// --------HELPERS------------------
 func testEval(input string) object.Object {
 	lexer := lexer.New(input)
 	parser := parser.New(lexer)
 	program := parser.ParseProgram()
 
 	return Eval(program)
+}
+
+func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
+	result, ok := obj.(*object.Boolean)
+
+	if !ok {
+		t.Errorf("object is not Boolean. got=%T (%+v)", obj, obj)
+		return false
+	}
+
+	if result.Value != expected {
+		t.Errorf("object has wrong value, got=%t, expected=%t", result.Value, expected)
+		return false
+	}
+
+	return true
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
