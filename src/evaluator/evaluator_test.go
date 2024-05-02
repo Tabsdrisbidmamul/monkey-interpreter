@@ -7,6 +7,11 @@ import (
 	"testing"
 )
 
+type ExpectedPrefixTest struct {
+	input    string
+	expected bool
+}
+
 type ExpectedBooleanTest struct {
 	input    string
 	expected bool
@@ -15,6 +20,22 @@ type ExpectedBooleanTest struct {
 type ExpectedIntegerTest struct {
 	input    string
 	expected int64
+}
+
+func TestBangOperator(t *testing.T) {
+	tests := []ExpectedPrefixTest{
+		{"!true", false},
+		{"!false", true},
+		{"!!true", true},
+		{"!!false", false},
+		{"!5", false},
+		{"!!5", true},
+	}
+
+	for _, tc := range tests {
+		evaluated := testEval(tc.input)
+		testBooleanObject(t, evaluated, tc.expected)
+	}
 }
 
 func TestEvalBooleanExpression(t *testing.T) {
