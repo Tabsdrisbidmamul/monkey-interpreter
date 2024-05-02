@@ -29,18 +29,75 @@ func Eval(node ast.Node) object.Object {
 	case *ast.PrefixExpression:
 		right := Eval(node.Right)
 		return evalPrefixExpression(node.Operator, right)
+
+	case *ast.InfixExpression:
+		left := Eval(node.Left)
+		right := Eval(node.Right)
+		return evalInfixExpression(node.Operator, left, right)
 	}
 
 	return nil
+}
+
+func evalInfixExpression(operator string, left, right object.Object) object.Object {
+	switch {
+	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
+		return evalIntegerInfixExpression(operator, left, right)
+	case operator == "==":
+		return nativeToBooleanObject(left == right)
+	case operator == "!=":
+		return nativeToBooleanObject(left != right)
+	default:
+		return NULL
+	}
+}
+
+func evalIntegerInfixExpression(operator string, left, right object.Object) object.Object {
+	leftVal := left.(*object.Integer).Value
+	rightVal := right.(*object.Integer).Value
+
+	switch operator {
+	case "+":
+		return &object.Integer{Value: leftVal + rightVal}
+	case "-":
+		return &object.Integer{Value: leftVal - rightVal}
+	case "*":
+		return &object.Integer{Value: leftVal * rightVal}
+	case "/":
+		return &object.Integer{Value: leftVal / rightVal}
+	case "%":
+		return &object.Integer{Value: leftVal % rightVal}
+	case "<":
+		return nativeToBooleanObject(leftVal < rightVal)
+	case ">":
+		return nativeToBooleanObject(leftVal > rightVal)
+	case "==":
+		return nativeToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeToBooleanObject(leftVal != rightVal)
+	default:
+		return NULL
+	}
 }
 
 func evalPrefixExpression(operator string, right object.Object) object.Object {
 	switch operator {
 	case "!":
 		return evalBangOperatorExpression(right)
+	case "-":
+		return evalMinusPrefixOperator(right)
 	default:
 		return NULL
 	}
+}
+
+func evalMinusPrefixOperator(right object.Object) object.Object {
+	if right.Type() != object.INTEGER_OBJ {
+		return NULL
+	}
+
+	value := right.(*object.Integer).Value
+	return &object.Integer{Value: -value}
 }
 
 /*
@@ -55,9 +112,9 @@ same goes for !false == true
 !!true == true
 the eval step in case *ast.PrefixExpression in Eval() method, it wil recursively call Eval on the right node, in this case its (!(!true)), so the
   - 1st right is !true
-  - Here the method will return a false
+    _ Here the method will return a false
   - 2nd call will be true
-  - Here the method will return a true
+    _ Which will go to the Boolean case switch
 
 The first return is passed down (which was false), in our lookup table it wil return true.
 
