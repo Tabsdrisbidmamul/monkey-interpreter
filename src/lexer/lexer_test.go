@@ -10,8 +10,32 @@ type TokenTest struct {
 	expectedLiteral string
 }
 
+func TestReadInFloatAndInteger(t *testing.T) {
+	input := `let fl = 1.234;
+  let integer = 1234;
+  `
+
+	tests := []TokenTest{
+		{token.LET, "let"},
+		{token.IDENT, "fl"},
+		{token.ASSIGN, "="},
+		{token.FLOAT, "1.234"},
+		{token.SEMICOLON, ";"},
+		{token.LET, "let"},
+		{token.IDENT, "integer"},
+		{token.ASSIGN, "="},
+		{token.INT, "1234"},
+		{token.SEMICOLON, ";"},
+		{token.EOF, ""},
+	}
+
+	lexedToken := New(input)
+
+	testLexedToken(t, lexedToken, tests)
+}
+
 func TestNextTokenSimple(t *testing.T) {
-	var input = "=+(){},;"
+	var input = "=+(){},*/%;"
 
 	var tests = []TokenTest{
 		{token.ASSIGN, "="},
@@ -21,6 +45,9 @@ func TestNextTokenSimple(t *testing.T) {
 		{token.LBRACE, "{"},
 		{token.RBRACE, "}"},
 		{token.COMMA, ","},
+		{token.ASTERISK, "*"},
+		{token.SLASH, "/"},
+		{token.MOD, "%"},
 		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
