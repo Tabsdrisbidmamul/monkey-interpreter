@@ -401,6 +401,10 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"!(true == true)",
 			"(!(true == true))",
 		},
+		{
+			"(1.5 + 1.5) * 2",
+			"((1.5 + 1.5) * 2)",
+		},
 	}
 
 	for _, tc := range tests {
@@ -420,6 +424,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 func TestParsingInfixExpression(t *testing.T) {
 	infixTests := []ExpectedInfixTest{
 		{"5 + 5;", 5, "+", 5},
+		{"1.5 + 1.5;", 1.5, "+", 1.5},
 		{"5 - 5;", 5, "-", 5},
 		{"5 * 5;", 5, "*", 5},
 		{"5 / 5;", 5, "/", 5},
@@ -459,6 +464,7 @@ func TestParsingPrefixExpression(t *testing.T) {
 	prefixTests := []ExpectedPrefixTest{
 		{"!5", "!", 5},
 		{"-15", "-", 15},
+		{"-1.5", "-", 1.5},
 		{"!true;", "!", true},
 		{"!false;", "!", false},
 	}
@@ -482,6 +488,29 @@ func TestParsingPrefixExpression(t *testing.T) {
 		if !testPrefixExpression(t, statement.Expression, testCase.operator, testCase.value) {
 			return
 		}
+	}
+}
+
+func TestFloatLiteralExpression(t *testing.T) {
+	input := "1.2"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+	program := parser.ParseProgram()
+
+	checkParserErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	if !testLiteralExpression(t, statement.Expression, 1.2) {
+		return
 	}
 }
 
@@ -663,6 +692,8 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 		return testIntegerLiteral(t, exp, int64(v))
 	case int64:
 		return testIntegerLiteral(t, exp, v)
+	case float64:
+		return testFloatLiteral(t, exp, v)
 	case bool:
 		return testBooleanLiteral(t, exp, v)
 	case string:
@@ -786,6 +817,26 @@ func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 
 	if identifier.TokenLiteral() != value {
 		t.Errorf("identifier.TokenLiteral() not %s. got=%s", value, identifier.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func testFloatLiteral(t *testing.T, floatLiteral ast.Expression, value float64) bool {
+	_float, ok := floatLiteral.(*ast.FloatLiteral)
+	if !ok {
+		t.Errorf("floatLiteral not *ast.FloatLiteral. got=%T", floatLiteral)
+		return false
+	}
+
+	if _float.Value != value {
+		t.Errorf("_float.Value not %f, got=%f", value, _float.Value)
+		return false
+	}
+
+	if _float.TokenLiteral() != fmt.Sprintf("%0.1f", value) {
+		t.Errorf("_float.TokenLiteral() not %0.1f, got=%s", value, _float.TokenLiteral())
 		return false
 	}
 

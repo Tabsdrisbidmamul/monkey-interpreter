@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"log"
 	"monkey/token"
 )
 
@@ -59,7 +58,8 @@ func (l *Lexer) readNumber() (string, token.TokenType) {
 		l.readChar()
 	}
 
-	if l.ch == '.' {
+	// if the current char is a '.' and the next char is a digit, then we have a float
+	if l.ch == '.' && isDigit(l.peekChar()) {
 		// move to check if there is a number
 		l.readChar()
 
@@ -71,17 +71,6 @@ func (l *Lexer) readNumber() (string, token.TokenType) {
 	}
 
 	return l.input[position:l.position], token.TokenType(tokenType)
-}
-
-func (l *Lexer) readFloat() {
-	var position = l.position
-
-	log.Printf("position: %d", position)
-
-	for i := position; isDigit(l.input[position]) || l.input[position] == '.'; i++ {
-		position++
-	}
-
 }
 
 func (l *Lexer) NextToken() token.Token {
@@ -140,6 +129,7 @@ func (l *Lexer) NextToken() token.Token {
 	case 0:
 		_token.Literal = ""
 		_token.Type = token.EOF
+
 	default:
 		if isLetter(l.ch) {
 			_token.Literal = l.readIdentifier()

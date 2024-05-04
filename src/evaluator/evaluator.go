@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"math"
 	"monkey/ast"
 	"monkey/object"
 )
@@ -13,6 +14,7 @@ var (
 
 // We need to pass the concrete type ast.Node, for all other structs that implements ast.Node to allow the "polymorphism" to work
 func Eval(node ast.Node) object.Object {
+
 	switch node := node.(type) {
 	case *ast.Program:
 		return evalStatements(node.Statements)
@@ -22,6 +24,9 @@ func Eval(node ast.Node) object.Object {
 
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+
+	case *ast.FloatLiteral:
+		return &object.Float{Value: node.Value}
 
 	case *ast.Boolean:
 		return nativeToBooleanObject(node.Value)
@@ -43,6 +48,15 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	switch {
 	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
 		return evalIntegerInfixExpression(operator, left, right)
+
+	case left.Type() == object.FLOAT_OBJ && right.Type() == object.FLOAT_OBJ:
+		return evalFloatInfixExpression(operator, left, right)
+
+		// left - float right - int
+		// left - int right float
+	case left.Type() == object.FLOAT_OBJ && right.Type() == object.INTEGER_OBJ || left.Type() == object.INTEGER_OBJ && right.Type() == object.FLOAT_OBJ:
+		return evalFloatIntegerInfixExpression(operator, left, right)
+
 	case operator == "==":
 		return nativeToBooleanObject(left == right)
 	case operator == "!=":
@@ -50,6 +64,76 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	default:
 		return NULL
 	}
+}
+
+func evalFloatIntegerInfixExpression(operator string, left, right object.Object) object.Object {
+	var _integerValue int64
+	var _floatValue float64
+
+	_, leftFloatErr := left.(*object.Float)
+	if !leftFloatErr {
+		_integerValue = left.(*object.Integer).Value
+		_floatValue = right.(*object.Float).Value
+	}
+
+	_, rightFloatErr := right.(*object.Float)
+	if !rightFloatErr {
+		_floatValue = left.(*object.Float).Value
+		_integerValue = right.(*object.Integer).Value
+	}
+
+	switch operator {
+	case "+":
+		return &object.Float{Value: _floatValue + float64(_integerValue)}
+	case "-":
+		return &object.Float{Value: _floatValue - float64(_integerValue)}
+	case "*":
+		return &object.Float{Value: _floatValue * float64(_integerValue)}
+	case "/":
+		return &object.Float{Value: _floatValue / float64(_integerValue)}
+	case "%":
+		return &object.Float{Value: math.Mod(_floatValue, float64(_integerValue))}
+	case "<":
+		return nativeToBooleanObject(_floatValue < float64(_integerValue))
+	case ">":
+		return nativeToBooleanObject(_floatValue > float64(_integerValue))
+	case "==":
+		return nativeToBooleanObject(_floatValue == float64(_integerValue))
+	case "!=":
+		return nativeToBooleanObject(_floatValue != float64(_integerValue))
+	default:
+		return NULL
+	}
+
+}
+
+func evalFloatInfixExpression(operator string, left, right object.Object) object.Object {
+	leftVal := left.(*object.Float).Value
+	rightVal := right.(*object.Float).Value
+
+	switch operator {
+	case "+":
+		return &object.Float{Value: leftVal + rightVal}
+	case "-":
+		return &object.Float{Value: leftVal - rightVal}
+	case "*":
+		return &object.Float{Value: leftVal * rightVal}
+	case "/":
+		return &object.Float{Value: leftVal / rightVal}
+	case "%":
+		return &object.Float{Value: math.Mod(leftVal, rightVal)}
+	case "<":
+		return nativeToBooleanObject(leftVal < rightVal)
+	case ">":
+		return nativeToBooleanObject(leftVal > rightVal)
+	case "==":
+		return nativeToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeToBooleanObject(leftVal != rightVal)
+	default:
+		return NULL
+	}
+
 }
 
 func evalIntegerInfixExpression(operator string, left, right object.Object) object.Object {
@@ -92,12 +176,18 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 }
 
 func evalMinusPrefixOperator(right object.Object) object.Object {
-	if right.Type() != object.INTEGER_OBJ {
+
+	switch right.Type() {
+	case object.INTEGER_OBJ:
+		value := right.(*object.Integer).Value
+		return &object.Integer{Value: -value}
+	case object.FLOAT_OBJ:
+		value := right.(*object.Float).Value
+		return &object.Float{Value: -value}
+	default:
 		return NULL
 	}
 
-	value := right.(*object.Integer).Value
-	return &object.Integer{Value: -value}
 }
 
 /*
