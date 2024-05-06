@@ -37,6 +37,7 @@ func TestIfElseIfElseExpressions(t *testing.T) {
 		{"if (false) { 10 } else if (true) { 11 } else { 12 }", 11},
 		{"if (true) { 10 } else if (true) { 11 } else { 12 }", 10},
 		{"if (false) { 10 } else if (false) { 11 } else { 12 }", 12},
+		{"if (false) { 10 } else if (false) { 11 } else if (true) { 12 } else { 13 }", 12},
 	}
 
 	for _, tc := range tests {
