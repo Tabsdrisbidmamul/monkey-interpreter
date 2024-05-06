@@ -39,9 +39,57 @@ func Eval(node ast.Node) object.Object {
 		left := Eval(node.Left)
 		right := Eval(node.Right)
 		return evalInfixExpression(node.Operator, left, right)
+
+	case *ast.BlockStatement:
+		return evalStatements(node.Statements)
+
+	case *ast.IfExpression:
+		return evalIfExpression(node)
 	}
 
 	return nil
+}
+
+/*
+when the condition is true, we return the result "true"
+- if (5 < 10) {return "true"} else { return "false" }
+
+# In our code, we will evaluate the consequence
+
+when the condition is false, re return result "false"
+- if (5 > 10) {return "true"} else { return "false" }
+
+# In our code, we will evaluate the alternative
+
+when the condition is false, but no else block is given, we return false
+if (5 < 10) {return "true"}
+
+In our code, we will return NULL
+*/
+func evalIfExpression(ife *ast.IfExpression) object.Object {
+	condition := Eval(ife.Condition)
+
+	if isTruthy(condition) {
+		return Eval(ife.Consequence)
+	} else if ife.Alternative != nil {
+		return Eval(ife.Alternative)
+	} else {
+		return NULL
+	}
+}
+
+func isTruthy(condition object.Object) bool {
+	switch condition {
+	case NULL:
+		return false
+	case TRUE:
+		return true
+	case FALSE:
+		return false
+	default:
+		return true
+	}
+
 }
 
 func evalInfixExpression(operator string, left, right object.Object) object.Object {
