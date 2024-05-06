@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"log"
 	"math"
 	"monkey/ast"
 	"monkey/object"
@@ -67,10 +68,31 @@ if (5 < 10) {return "true"}
 In our code, we will return NULL
 */
 func evalIfExpression(ife *ast.IfExpression) object.Object {
+	log.Println("evalIfExpression: we're in")
+
 	condition := Eval(ife.Condition)
+
+	log.Printf("isTruthy(condition) %t", isTruthy(condition))
 
 	if isTruthy(condition) {
 		return Eval(ife.Consequence)
+	} else if len(ife.ElseIfs) > 0 {
+		for i := 0; i < len(ife.ElseIfs); i++ {
+			eife := ife.ElseIfs[i]
+			condition := Eval(eife.Condition)
+
+			if isTruthy(condition) {
+				return Eval(eife.Consequence)
+			}
+		}
+
+		if ife.Alternative != nil {
+			return Eval(ife.Alternative)
+		} else {
+			log.Println("we're in")
+			return NULL
+		}
+
 	} else if ife.Alternative != nil {
 		return Eval(ife.Alternative)
 	} else {

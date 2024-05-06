@@ -390,6 +390,36 @@ func (p *Parser) parseIfExpression() ast.Expression {
 
 	expression.Consequence = p.parseBlockStatement()
 
+	for {
+		if p.peekTokenIs(token.ELSEIF) {
+			elseIfExpression := &ast.ElseIfExpression{Token: p.curToken}
+
+			p.nextToken()
+
+			if !p.expectPeek(token.LPAREN) {
+				return nil
+			}
+
+			p.nextToken()
+
+			elseIfExpression.Condition = p.parseExpression(LOWEST)
+
+			if !p.expectPeek(token.RPAREN) {
+				return nil
+			}
+
+			if !p.expectPeek(token.LBRACE) {
+				return nil
+			}
+
+			elseIfExpression.Consequence = p.parseBlockStatement()
+
+			expression.ElseIfs = append(expression.ElseIfs, elseIfExpression)
+		} else {
+			break
+		}
+	}
+
 	if p.peekTokenIs(token.ELSE) {
 		p.nextToken()
 

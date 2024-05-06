@@ -42,6 +42,7 @@ const (
 	FALSE    = "FALSE"
 	IF       = "IF"
 	ELSE     = "ELSE"
+	ELSEIF   = "ELSEIF"
 	RETURN   = "RETURN"
 )
 
@@ -51,13 +52,14 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
-	"fn":     FUNCTION,
-	"let":    LET,
-	"true":   TRUE,
-	"false":  FALSE,
-	"if":     IF,
-	"else":   ELSE,
-	"return": RETURN,
+	"fn":      FUNCTION,
+	"let":     LET,
+	"true":    TRUE,
+	"false":   FALSE,
+	"if":      IF,
+	"else":    ELSE,
+	"else if": ELSEIF,
+	"return":  RETURN,
 }
 
 // Check if the identifier is in the hashmap (fn, let, etc.). If its not in the hashmap, we can assume its a variable name

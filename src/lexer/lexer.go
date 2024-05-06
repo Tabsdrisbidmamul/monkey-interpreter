@@ -35,15 +35,32 @@ func (lexer *Lexer) readChar() {
 func (l *Lexer) peekChar() byte {
 	if l.readPosition >= len(l.input) {
 		return 0
-	} else {
-		return l.input[l.readPosition]
 	}
+
+	return l.input[l.readPosition]
+}
+
+func (l *Lexer) peekAheadChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	}
+
+	return l.input[l.readPosition+1]
+
 }
 
 // Read each character in the variable identifier moving along and return the entire identifier (we do an range on the slice, starting (position), ending (l.position) where the pointer has gotten up to)
 func (l *Lexer) readIdentifier() string {
 	var position = l.position
 	for isLetter(l.ch) {
+		l.readChar()
+	}
+
+	// check if the next char is whitespace, we want check if the keyword 'else if' has been passed
+	// if the next part starts with i, assume this is an else if, read ahead 2 times
+	if l.ch == ' ' && l.peekChar() == 'i' && l.peekAheadChar() == 'f' {
+		l.readChar()
+		l.readChar()
 		l.readChar()
 	}
 

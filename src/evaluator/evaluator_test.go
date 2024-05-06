@@ -32,6 +32,25 @@ type ExpectedIfElseTest struct {
 	expected interface{}
 }
 
+func TestIfElseIfElseExpressions(t *testing.T) {
+	tests := []ExpectedIfElseTest{
+		{"if (false) { 10 } else if (true) { 11 } else { 12 }", 11},
+		{"if (true) { 10 } else if (true) { 11 } else { 12 }", 10},
+		{"if (false) { 10 } else if (false) { 11 } else { 12 }", 12},
+	}
+
+	for _, tc := range tests {
+		evaluated := testEval(tc.input)
+		integer, ok := tc.expected.(int)
+		if ok {
+			testIntegerObject(t, evaluated, int64(integer))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+
+}
+
 func TestIfElseExpressions(t *testing.T) {
 	tests := []ExpectedIfElseTest{
 		{"if (true) { 10 }", 10},

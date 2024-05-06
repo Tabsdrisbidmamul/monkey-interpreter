@@ -208,6 +208,54 @@ func TestFunctionLiteralParsing(t *testing.T) {
 
 }
 
+func TestIfElifElseExpression(t *testing.T) {
+	input := `if (x < y) { x } else if (x == y) { y } else { z }`
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+	program := parser.ParseProgram()
+
+	checkParserErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n", 1, len(program.Statements))
+	}
+
+	ifStatement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	ifExpression, ok := ifStatement.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("statement.Expression is not ast.IfExpression. got=%T", ifStatement.Expression)
+	}
+
+	if len(ifExpression.ElseIfs) != 1 {
+		t.Fatalf("ifExpression.ElseIfs is not %d. got=%d", 1, len(ifExpression.ElseIfs))
+	}
+
+	if !testInfixExpression(t, ifExpression.Condition, "x", "<", "y") {
+		return
+	}
+
+	if !testConsequence(t, *ifExpression.Consequence, "x") {
+		return
+	}
+
+	if !testInfixExpression(t, ifExpression.ElseIfs[0].Condition, "x", "==", "y") {
+		return
+	}
+
+	if !testConsequence(t, *ifExpression.ElseIfs[0].Consequence, "y") {
+		return
+	}
+
+	if !testAlternative(t, *ifExpression.Alternative, "z") {
+		return
+	}
+}
+
 func TestIfElseExpression(t *testing.T) {
 	input := `if (x < y) { x } else { y }`
 
@@ -235,11 +283,11 @@ func TestIfElseExpression(t *testing.T) {
 		return
 	}
 
-	if !testConsequence(t, *expression, "x") {
+	if !testConsequence(t, *expression.Consequence, "x") {
 		return
 	}
 
-	if !testAlternative(t, *expression, "y") {
+	if !testAlternative(t, *expression.Alternative, "y") {
 		return
 	}
 }
@@ -271,7 +319,7 @@ func TestIfExpression(t *testing.T) {
 		return
 	}
 
-	if !testConsequence(t, *expression, "x") {
+	if !testConsequence(t, *expression.Consequence, "x") {
 		return
 	}
 
@@ -746,37 +794,38 @@ func testPrefixExpression(t *testing.T, exp ast.Expression, operator string, rig
 	return true
 }
 
-func testAlternative(t *testing.T, expression ast.IfExpression, ident string) bool {
-	if len(expression.Alternative.Statements) != 1 {
-		t.Errorf("alternative is not 1 statement. got=%d\n", len(expression.Alternative.Statements))
+func testAlternative(t *testing.T, alternative ast.BlockStatement, ident string) bool {
+	if len(alternative.Statements) != 1 {
+		t.Errorf("alternative is not 1 statement. got=%d\n", len(alternative.Statements))
 		return false
 	}
 
-	alternative, ok := expression.Alternative.Statements[0].(*ast.ExpressionStatement)
+	alternativeExpression, ok := alternative.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("expression.Alternative.Statements[0] is not ast.ExpressionStatement. got=%T", expression.Alternative.Statements[0])
+		t.Fatalf("expression.Alternative.Statements[0] is not ast.ExpressionStatement. got=%T", alternative.Statements[0])
 		return false
 	}
 
-	if !testIdentifier(t, alternative.Expression, "y") {
+	if !testIdentifier(t, alternativeExpression.Expression, ident) {
 		return false
 	}
 
 	return true
 }
 
-func testConsequence(t *testing.T, expression ast.IfExpression, ident string) bool {
-	if len(expression.Consequence.Statements) != 1 {
-		t.Errorf("consequence is not 1 statement. got=%d\n", len(expression.Consequence.Statements))
+func testConsequence(t *testing.T, consequence ast.BlockStatement, ident string) bool {
+	if len(consequence.Statements) != 1 {
+		t.Errorf("consequence is not 1 statement. got=%d\n", len(consequence.Statements))
 	}
 
-	consequence, ok := expression.Consequence.Statements[0].(*ast.ExpressionStatement)
+	expression, ok := consequence.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("expression.Consequence.Statements[0] is not ast.ExpressionStatement. got=%T", expression.Consequence.Statements[0])
+		t.Fatalf("expression.Consequence.Statements[0] is not ast.ExpressionStatement. got=%T",
+			consequence.Statements[0])
 		return false
 	}
 
-	if !testIdentifier(t, consequence.Expression, ident) {
+	if !testIdentifier(t, expression.Expression, ident) {
 		return false
 	}
 

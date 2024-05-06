@@ -10,6 +10,55 @@ type TokenTest struct {
 	expectedLiteral string
 }
 
+func TestIfElifElseTokens(t *testing.T) {
+	input := `
+  if (5 < 10) {
+    return true;
+  } else if (6 < 10) {
+    return true;
+  } else {
+    return false;
+  }
+  `
+
+	tests := []TokenTest{
+		{token.IF, "if"},
+		{token.LPAREN, "("},
+		{token.INT, "5"},
+		{token.LT, "<"},
+		{token.INT, "10"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+
+		{token.ELSEIF, "else if"},
+		{token.LPAREN, "("},
+		{token.INT, "6"},
+		{token.LT, "<"},
+		{token.INT, "10"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+
+		{token.ELSE, "else"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.FALSE, "false"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+	}
+
+	lexedToken := New(input)
+
+	testLexedToken(t, lexedToken, tests)
+}
+
 func TestReadInFloatAndInteger(t *testing.T) {
 	input := `let fl = 1.234;
   let integer = 1234;

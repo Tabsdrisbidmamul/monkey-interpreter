@@ -216,9 +216,15 @@ func (b *Boolean) String() string {
 }
 
 type IfExpression struct {
-	Token       token.Token
+	Token token.Token
+	// If part
 	Condition   Expression
 	Consequence *BlockStatement
+
+	// Else if part
+	ElseIfs []*ElseIfExpression
+
+	// Else part
 	Alternative *BlockStatement
 }
 
@@ -259,6 +265,29 @@ func (bs *BlockStatement) String() string {
 	for _, statement := range bs.Statements {
 		out.WriteString(statement.String())
 	}
+
+	return out.String()
+}
+
+type ElseIfExpression struct {
+	Token token.Token
+	// Else if part
+	Condition   Expression
+	Consequence *BlockStatement
+}
+
+// implements Expression
+func (eif *ElseIfExpression) expressionNode() {}
+func (eif *ElseIfExpression) TokenLiteral() string {
+	return eif.Token.Literal
+}
+func (eif *ElseIfExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("else if")
+	out.WriteString(eif.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(eif.Consequence.String())
 
 	return out.String()
 }
