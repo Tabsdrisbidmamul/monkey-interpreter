@@ -32,6 +32,34 @@ type ExpectedIfElseTest struct {
 	expected interface{}
 }
 
+type ExpectedReturnTest struct {
+	input    string
+	expected int64
+}
+
+func TestReturnStatements(t *testing.T) {
+	tests := []ExpectedReturnTest{
+		{"return 10;", 10},
+		{"return 10; 9;", 10},
+		{"return 2 * 5; 9;", 10},
+		{"9; return 2 * 5; 9;", 10},
+		{`
+    if (10 > 1) {
+      if (10 > 1) {
+        return 10;
+      }
+
+      return 1;
+    }
+    `, 10},
+	}
+
+	for _, tc := range tests {
+		evaluated := testEval(tc.input)
+		testIntegerObject(t, evaluated, tc.expected)
+	}
+}
+
 func TestIfElseIfElseExpressions(t *testing.T) {
 	tests := []ExpectedIfElseTest{
 		{"if (false) { 10 } else if (true) { 11 } else { 12 }", 11},
