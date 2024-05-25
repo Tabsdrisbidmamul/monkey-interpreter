@@ -22,14 +22,14 @@ func isError(obj object.Object) bool {
 }
 
 // We need to pass the concrete type ast.Node, for all other structs that implements ast.Node to allow the "polymorphism" to work
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, env *object.Environment) object.Object {
 
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalProgram(node.Statements)
+		return evalProgram(node.Statements, env)
 
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, env)
 
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
@@ -41,7 +41,7 @@ func Eval(node ast.Node) object.Object {
 		return nativeToBooleanObject(node.Value)
 
 	case *ast.PrefixExpression:
-		right := Eval(node.Right)
+		right := Eval(node.Right, env)
 		if isError(right) {
 			return right
 		}
@@ -49,30 +49,41 @@ func Eval(node ast.Node) object.Object {
 		return evalPrefixExpression(node.Operator, right)
 
 	case *ast.InfixExpression:
-		left := Eval(node.Left)
+		left := Eval(node.Left, env)
 		if isError(left) {
 			return left
 		}
 
-		right := Eval(node.Right)
+		right := Eval(node.Right, env)
 		if isError(right) {
 			return right
 		}
 		return evalInfixExpression(node.Operator, left, right)
 
 	case *ast.BlockStatement:
-		return evalBlockStatement(node)
+		return evalBlockStatement(node, env)
 
 	case *ast.IfExpression:
-		return evalIfExpression(node)
+		return evalIfExpression(node, env)
 
 	case *ast.ReturnStatement:
-		val := Eval(node.ReturnValue)
+		val := Eval(node.ReturnValue, env)
 		if isError(val) {
 			return val
 		}
 
 		return &object.ReturnValue{Value: val}
+
+	case *ast.LetStatement:
+		val := Eval(node.Value, env)
+		if isError(val) {
+			return val
+		}
+
+		env.Set(node.Name.Value, val)
+
+	case *ast.Identifier:
+		return evalIdentifier(node, env)
 	}
 
 	return nil
@@ -80,6 +91,15 @@ func Eval(node ast.Node) object.Object {
 
 func newError(format string, a ...interface{}) *object.Error {
 	return &object.Error{Message: fmt.Sprintf(format, a...)}
+}
+
+func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+	val, ok := env.Get(node.Value)
+	if !ok {
+		return newError("identifier not found: " + node.Value)
+	}
+
+	return val
 }
 
 /*
@@ -98,33 +118,33 @@ if (5 < 10) {return "true"}
 
 In our code, we will return NULL
 */
-func evalIfExpression(ife *ast.IfExpression) object.Object {
-	condition := Eval(ife.Condition)
+func evalIfExpression(ife *ast.IfExpression, env *object.Environment) object.Object {
+	condition := Eval(ife.Condition, env)
 	if isError(condition) {
 		return condition
 	}
 
 	if isTruthy(condition) {
-		return Eval(ife.Consequence)
+		return Eval(ife.Consequence, env)
 	} else if len(ife.ElseIfs) > 0 {
 		for i := 0; i < len(ife.ElseIfs); i++ {
 			eife := ife.ElseIfs[i]
-			condition := Eval(eife.Condition)
+			condition := Eval(eife.Condition, env)
 
 			if isTruthy(condition) {
-				return Eval(eife.Consequence)
+				return Eval(eife.Consequence, env)
 			}
 		}
 
 		if ife.Alternative != nil {
-			return Eval(ife.Alternative)
+			return Eval(ife.Alternative, env)
 		} else {
 			log.Println("we're in")
 			return NULL
 		}
 
 	} else if ife.Alternative != nil {
-		return Eval(ife.Alternative)
+		return Eval(ife.Alternative, env)
 	} else {
 		return NULL
 	}
@@ -331,11 +351,11 @@ func nativeToBooleanObject(value bool) *object.Boolean {
 	return FALSE
 }
 
-func evalProgram(statements []ast.Statement) object.Object {
+func evalProgram(statements []ast.Statement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range statements {
-		result = Eval(statement)
+		result = Eval(statement, env)
 
 		switch result := result.(type) {
 		case *object.ReturnValue:
@@ -348,11 +368,11 @@ func evalProgram(statements []ast.Statement) object.Object {
 	return result
 }
 
-func evalBlockStatement(block *ast.BlockStatement) object.Object {
+func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range block.Statements {
-		result = Eval(statement)
+		result = Eval(statement, env)
 
 		if result != nil {
 			rt := result.Type()
