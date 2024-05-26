@@ -12,6 +12,17 @@ type ExpectedTest[T any] struct {
 	expected T
 }
 
+func TestClosures(t *testing.T) {
+	input := `
+let newAdder = fn(x) {
+  fn(y) { x + y };
+};
+let addTwo = newAdder(2);
+addTwo(2);`
+
+	testIntegerObject(t, testEval(input), 4)
+}
+
 func TestFunctionAppLiteral(t *testing.T) {
 	tests := []ExpectedTest[int64]{
 		{"let identity = fn(x) { x; }; identity(5);", 5},
