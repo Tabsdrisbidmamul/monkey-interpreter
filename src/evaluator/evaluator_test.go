@@ -7,44 +7,24 @@ import (
 	"testing"
 )
 
-type ExpectedPrefixTest struct {
+type ExpectedTest[T any] struct {
 	input    string
-	expected bool
+	expected T
 }
 
-type ExpectedBooleanTest struct {
-	input    string
-	expected bool
-}
+func TestFunctionAppLiteral(t *testing.T) {
+	tests := []ExpectedTest[int64]{
+		{"let identity = fn(x) { x; }; identity(5);", 5},
+		{"let identity = fn(x) { return x; }; identity(5);", 5},
+		{"let double = fn(x) { x * 2; }; double(5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"fn(x) { x; }(5)", 5},
+	}
 
-type ExpectedFloatTest struct {
-	input    string
-	expected float64
-}
-
-type ExpectedIntegerTest struct {
-	input    string
-	expected int64
-}
-
-type ExpectedIfElseTest struct {
-	input    string
-	expected interface{}
-}
-
-type ExpectedReturnTest struct {
-	input    string
-	expected int64
-}
-
-type ExpectedErrorTest struct {
-	input    string
-	expected string
-}
-
-type ExpectedLetTest struct {
-	input    string
-	expected int64
+	for _, tc := range tests {
+		testIntegerObject(t, testEval(tc.input), tc.expected)
+	}
 }
 
 func TestFunctionObject(t *testing.T) {
@@ -73,7 +53,7 @@ func TestFunctionObject(t *testing.T) {
 }
 
 func TestLetStatements(t *testing.T) {
-	tests := []ExpectedLetTest{
+	tests := []ExpectedTest[int64]{
 		{"let a = 5; a;", 5},
 		{"let a = 5 * 5; a;", 25},
 		{"let a = 5; let b = a; b;", 5},
@@ -86,7 +66,7 @@ func TestLetStatements(t *testing.T) {
 }
 
 func TestErrorHandling(t *testing.T) {
-	tests := []ExpectedErrorTest{
+	tests := []ExpectedTest[string]{
 		{
 			"5 + true;",
 			"type mismatch: INTEGER + BOOLEAN",
@@ -145,7 +125,7 @@ func TestErrorHandling(t *testing.T) {
 }
 
 func TestReturnStatements(t *testing.T) {
-	tests := []ExpectedReturnTest{
+	tests := []ExpectedTest[int64]{
 		{"return 10;", 10},
 		{"return 10; 9;", 10},
 		{"return 2 * 5; 9;", 10},
@@ -168,7 +148,7 @@ func TestReturnStatements(t *testing.T) {
 }
 
 func TestIfElseIfElseExpressions(t *testing.T) {
-	tests := []ExpectedIfElseTest{
+	tests := []ExpectedTest[interface{}]{
 		{"if (false) { 10 } else if (true) { 11 } else { 12 }", 11},
 		{"if (true) { 10 } else if (true) { 11 } else { 12 }", 10},
 		{"if (false) { 10 } else if (false) { 11 } else { 12 }", 12},
@@ -188,7 +168,7 @@ func TestIfElseIfElseExpressions(t *testing.T) {
 }
 
 func TestIfElseExpressions(t *testing.T) {
-	tests := []ExpectedIfElseTest{
+	tests := []ExpectedTest[interface{}]{
 		{"if (true) { 10 }", 10},
 		{"if (false) { 10 }", nil},
 		{"if (1) { 10 }", 10},
@@ -211,7 +191,7 @@ func TestIfElseExpressions(t *testing.T) {
 }
 
 func TestBangOperator(t *testing.T) {
-	tests := []ExpectedPrefixTest{
+	tests := []ExpectedTest[bool]{
 		{"!true", false},
 		{"!false", true},
 		{"!!true", true},
@@ -227,7 +207,7 @@ func TestBangOperator(t *testing.T) {
 }
 
 func TestEvalBooleanExpression(t *testing.T) {
-	tests := []ExpectedBooleanTest{
+	tests := []ExpectedTest[bool]{
 		{"true", true},
 		{"false", false},
 		{"1 < 2", true},
@@ -256,7 +236,7 @@ func TestEvalBooleanExpression(t *testing.T) {
 }
 
 func TestEvalFloatExpression(t *testing.T) {
-	tests := []ExpectedFloatTest{
+	tests := []ExpectedTest[float64]{
 		{"1.5", 1.5},
 		{"-1.5", -1.5},
 		{"1.5 + 1.5", 3.0},
@@ -276,7 +256,7 @@ func TestEvalFloatExpression(t *testing.T) {
 }
 
 func TestEvalIntegerExpression(t *testing.T) {
-	tests := []ExpectedIntegerTest{
+	tests := []ExpectedTest[int64]{
 		{"5", 5},
 		{"10", 10},
 		{"-5", -5},
