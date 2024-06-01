@@ -44,6 +44,9 @@ const (
 	ELSE     = "ELSE"
 	ELSEIF   = "ELSEIF"
 	RETURN   = "RETURN"
+
+	// Data structures
+	STRING = "STRING"
 )
 
 type Token struct {
