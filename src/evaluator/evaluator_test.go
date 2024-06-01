@@ -12,6 +12,20 @@ type ExpectedTest[T any] struct {
 	expected T
 }
 
+func TestStringLiteral(t *testing.T) {
+	input := `"Hello World!"`
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if str.Value != "Hello World!" {
+		t.Errorf("String has wrong value. expected=%q, got=%q", "Hello World!", str.Value)
+	}
+
+}
 func TestClosures(t *testing.T) {
 	input := `
 let newAdder = fn(x) {
