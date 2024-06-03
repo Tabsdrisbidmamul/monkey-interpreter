@@ -12,6 +12,35 @@ type ExpectedTest[T any] struct {
 	expected T
 }
 
+func TestStringComparison(t *testing.T) {
+	input := `"test" == "test"`
+
+	evaluated := testEval(input)
+	result, ok := evaluated.(*object.Boolean)
+	if !ok {
+		t.Fatalf("object is not Boolean. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if result.Value != true {
+		t.Errorf("Boolean has wrong value. expected=%t, got=%t", true, result.Value)
+	}
+
+}
+
+func TestStringConcatenation(t *testing.T) {
+	input := `"Hello" + " " + "World!"`
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if str.Value != "Hello World!" {
+		t.Errorf("String has wrong value. got=%q", str.Value)
+	}
+}
+
 func TestStringLiteral(t *testing.T) {
 	input := `"Hello World!"`
 
@@ -130,6 +159,10 @@ func TestErrorHandling(t *testing.T) {
 		{
 			"foobar",
 			"identifier not found: foobar",
+		},
+		{
+			`"Hello" - "World"`,
+			"unknown operator: STRING - STRING",
 		},
 	}
 

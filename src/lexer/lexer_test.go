@@ -84,10 +84,12 @@ func TestReadInFloatAndInteger(t *testing.T) {
 }
 
 func TestStringToken(t *testing.T) {
-	input := `"foobar"`
+	input := `"foobar";
+  `
 
 	tests := []TokenTest{
 		{token.STRING, "foobar"},
+		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
 

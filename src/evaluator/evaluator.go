@@ -219,10 +219,13 @@ func isTruthy(condition object.Object) bool {
 }
 
 func evalInfixExpression(operator string, left, right object.Object) object.Object {
+
 	switch {
+	// integer
 	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
 		return evalIntegerInfixExpression(operator, left, right)
 
+		// float
 	case left.Type() == object.FLOAT_OBJ && right.Type() == object.FLOAT_OBJ:
 		return evalFloatInfixExpression(operator, left, right)
 
@@ -231,15 +234,40 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	case left.Type() == object.FLOAT_OBJ && right.Type() == object.INTEGER_OBJ || left.Type() == object.INTEGER_OBJ && right.Type() == object.FLOAT_OBJ:
 		return evalFloatIntegerInfixExpression(operator, left, right)
 
+		// string evaluations
+	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
+
+		return evalStringInfixExpression(operator, left, right)
+
 	case operator == "==":
 		return nativeToBooleanObject(left == right)
 	case operator == "!=":
 		return nativeToBooleanObject(left != right)
+
 	case left.Type() != right.Type():
 		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
+
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
+}
+
+func evalStringInfixExpression(operator string, left, right object.Object) object.Object {
+
+	leftVal := left.(*object.String).Value
+	rightVal := right.(*object.String).Value
+
+	switch operator {
+	case "==":
+		return &object.Boolean{Value: leftVal == rightVal}
+
+	case "+":
+		return &object.String{Value: leftVal + rightVal}
+
+	default:
+		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+	}
+
 }
 
 func evalFloatIntegerInfixExpression(operator string, left, right object.Object) object.Object {
