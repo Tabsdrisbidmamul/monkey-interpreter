@@ -71,6 +71,7 @@ func New(l *lexer.Lexer) *Parser {
 	parser.registerPrefix(token.IF, parser.parseIfExpression)
 	parser.registerPrefix(token.FUNCTION, parser.parseFunctionLiteral)
 	parser.registerPrefix(token.STRING, parser.parseStringLiteral)
+	parser.registerPrefix(token.LBRACKET, parser.parseArrayLiteral)
 
 	// initialise the infixParseFns map, and register all infixes to maps
 	parser.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -279,22 +280,30 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	array := &ast.ArrayLiteral{Token: p.curToken}
+
+	array.Elements = p.parseExpressionList(token.RBRACKET)
+
+	return array
+}
+
 func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
 
 	return exp
 }
 
-func (p *Parser) parseCallArguments() []ast.Expression {
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 	args := make([]ast.Expression, 0)
 
 	// empty argument list
-	if p.peekTokenIs(token.RPAREN) {
+	if p.peekTokenIs(end) {
 		p.nextToken()
 		return args
 	}
@@ -314,7 +323,7 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 	}
 
 	// no right brace, syntax error
-	if !p.expectPeek(token.RPAREN) {
+	if !p.expectPeek(end) {
 		return nil
 	}
 
