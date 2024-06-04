@@ -14,6 +14,24 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
+var builtins = map[string]*object.Builtin{
+	"len": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, expected=1", len(args))
+			}
+
+			switch arg := args[0].(type) {
+			case *object.String:
+				return &object.Integer{Value: int64(len(arg.Value))}
+
+			default:
+				return newError("argument to `len` not supported, got %s", args[0].Type())
+			}
+		},
+	},
+}
+
 // We need to pass the concrete type ast.Node, for all other structs that implements ast.Node to allow the "polymorphism" to work
 func Eval(node ast.Node, env *object.Environment) object.Object {
 
@@ -105,14 +123,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 }
 
 func applyFunction(fn object.Object, args []object.Object) object.Object {
-	function, ok := fn.(*object.Function)
-	if !ok {
-		return newError("not a function %s", fn.Type())
-	}
+	switch fn := fn.(type) {
+	case *object.Function:
+		extendedEnv := extendFunctionEnv(fn, args)
+		evaluated := Eval(fn.Body, extendedEnv)
+		return unwrapReturnValue(evaluated)
 
-	extendedEnv := extendFunctionEnv(function, args)
-	evaluated := Eval(function.Body, extendedEnv)
-	return unwrapReturnValue(evaluated)
+	case *object.Builtin:
+		return fn.Fn(args...)
+
+	default:
+		return newError("not a function: %s", fn.Type())
+	}
 }
 
 func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
@@ -148,12 +170,15 @@ func evalExpression(expression []ast.Expression, env *object.Environment) []obje
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
-	val, ok := env.Get(node.Value)
-	if !ok {
-		return newError("identifier not found: " + node.Value)
+	if val, ok := env.Get(node.Value); ok {
+		return val
 	}
 
-	return val
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+
+	return newError("identifier not found: " + node.Value)
 }
 
 /*

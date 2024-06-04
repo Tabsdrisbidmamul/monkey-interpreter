@@ -12,6 +12,35 @@ type ExpectedTest[T any] struct {
 	expected T
 }
 
+func TestBuiltinFunctions(t *testing.T) {
+	tests := []ExpectedTest[interface{}]{
+		{`len("")`, 0},
+		{`len("four")`, 4},
+		{`len("hello world")`, 11},
+		{`len(1)`, "argument to `len` not supported, got INTEGER"},
+		{`len("one", "two")`, "wrong number of arguments. got=2, expected=1"},
+	}
+
+	for _, tc := range tests {
+		evaluated := testEval(tc.input)
+
+		switch expected := tc.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+			if !ok {
+				t.Errorf("object is not Error. got=%T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q", expected, errObj.Message)
+			}
+		}
+	}
+}
+
 func TestStringComparison(t *testing.T) {
 	input := `"test" == "test"`
 
