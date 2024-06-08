@@ -20,6 +20,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	CALL        // myFunc(X)
+	INDEX       // array[index]
 )
 
 var precedences = map[token.TokenType]int{
@@ -33,6 +34,7 @@ var precedences = map[token.TokenType]int{
 	token.ASTERISK: PRODUCT,
 	token.MOD:      PRODUCT,
 	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 type (
@@ -85,6 +87,7 @@ func New(l *lexer.Lexer) *Parser {
 	parser.registerInfix(token.LT, parser.parseInfixExpression)
 	parser.registerInfix(token.GT, parser.parseInfixExpression)
 	parser.registerInfix(token.LPAREN, parser.parseCallExpression)
+	parser.registerInfix(token.LBRACKET, parser.parseIndexExpression)
 
 	return parser
 }
@@ -222,12 +225,14 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 
 	leftExp := prefix()
-	// fmt.Printf("leftExp is %+v\n", leftExp)
+	// log.Printf("PREFIX leftExp is %v\n", leftExp)
+	// log.Printf("PREFIX leftExp (type) %T\n", leftExp)
 
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
-		// fmt.Printf("p.peekToken is %+v\n", p.peekToken)
+		// log.Printf("p.peekToken is %+v\n", p.peekToken)
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
+			// log.Printf("INFIX RETURN leftExp: %+v", leftExp)
 			return leftExp
 		}
 
@@ -235,8 +240,10 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		p.nextToken()
 		// e.g. 5 + 5, the leftExp will be 5, and curToken is now +
 		leftExp = infix(leftExp)
+		// log.Printf("INFIX leftExp is %+v\n", leftExp)
 	}
 
+	// log.Printf("END RETURN leftExp: %+v", leftExp)
 	return leftExp
 }
 
@@ -280,10 +287,32 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+
+	// log.Printf("BEFORE expression: %+v", *exp)
+
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
+
+	// log.Printf("expression.Index: %+v", exp.Index)
+	// log.Printf("AFTER expression: %+v", *exp)
+
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+
+	// log.Printf("RETURN expression: %+v", *exp)
+
+	return exp
+}
+
 func (p *Parser) parseArrayLiteral() ast.Expression {
 	array := &ast.ArrayLiteral{Token: p.curToken}
 
 	array.Elements = p.parseExpressionList(token.RBRACKET)
+
+	// log.Printf("array.Elements: %+v", *array)
 
 	return array
 }
@@ -300,7 +329,7 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
-	args := make([]ast.Expression, 0)
+	args := []ast.Expression{}
 
 	// empty argument list
 	if p.peekTokenIs(end) {
@@ -326,6 +355,9 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 	if !p.expectPeek(end) {
 		return nil
 	}
+
+	// log.Printf("args: %+v", args)
+	// log.Printf("args len: %d", len(args))
 
 	return args
 }

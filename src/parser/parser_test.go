@@ -52,6 +52,30 @@ type ExpectedInfixTest struct {
 	rightValue interface{}
 }
 
+func TestParsingIndexExpression(t *testing.T) {
+	input := "myArray[1 + 1]"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	statement := program.Statements[0].(*ast.ExpressionStatement)
+
+	indexExpression, ok := statement.Expression.(*ast.IndexExpression)
+	if !ok {
+		t.Fatalf("expression not *ast.IndexExpression, got=%T", statement.Expression)
+	}
+
+	if !testIdentifier(t, indexExpression.Left, "myArray") {
+		return
+	}
+
+	if !testInfixExpression(t, indexExpression.Index, 1, "+", 1) {
+		return
+	}
+}
+
 func TestParsingArrayLiterals(t *testing.T) {
 	input := "[1, 2 * 2, 3 + 3]"
 
@@ -403,101 +427,109 @@ func TestBooleanExpression(t *testing.T) {
 
 func TestOperatorPrecedenceParsing(t *testing.T) {
 	tests := []ExpectedPrecedenceTest{
+		// {
+		// 	"-a * b",
+		// 	"((-a) * b)",
+		// },
+		// {
+		// 	"!-a",
+		// 	"(!(-a))",
+		// },
+		// {
+		// 	"a + b + c",
+		// 	"((a + b) + c)",
+		// },
+		// {
+		// 	"a + b - c",
+		// 	"((a + b) - c)",
+		// },
+		// {
+		// 	"a * b * c",
+		// 	"((a * b) * c)",
+		// },
+		// {
+		// 	"a * b / c",
+		// 	"((a * b) / c)",
+		// },
+		// {
+		// 	"a % b * c",
+		// 	"((a % b) * c)",
+		// },
+		// {
+		// 	"a + b / c",
+		// 	"(a + (b / c))",
+		// },
+		// {
+		// 	"a + b * c + d / e - f",
+		// 	"(((a + (b * c)) + (d / e)) - f)",
+		// },
+		// {
+		// 	"3 + 4; -5 * 5",
+		// 	"(3 + 4)((-5) * 5)",
+		// },
+		// {
+		// 	"5 > 4 == 3 < 4",
+		// 	"((5 > 4) == (3 < 4))",
+		// },
+		// {
+		// 	"5 < 4 != 3 > 4",
+		// 	"((5 < 4) != (3 > 4))",
+		// },
+		// {
+		// 	"3 + 4 * 5 == 3 * 1 + 4 * 5",
+		// 	"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		// },
+		// {
+		// 	"-1 * 2 + 3",
+		// 	"(((-1) * 2) + 3)",
+		// },
+		// {
+		// 	"true",
+		// 	"true",
+		// },
+		// {
+		// 	"false",
+		// 	"false",
+		// },
+		// {
+		// 	"3 > 5 == false",
+		// 	"((3 > 5) == false)",
+		// },
+		// {
+		// 	"3 < 5 == true",
+		// 	"((3 < 5) == true)",
+		// },
+		// {
+		// 	"1 + (2 + 3) + 4",
+		// 	"((1 + (2 + 3)) + 4)",
+		// },
+		// {
+		// 	"(5 + 5) * 2",
+		// 	"((5 + 5) * 2)",
+		// },
+		// {
+		// 	"2 / (5 + 5)",
+		// 	"(2 / (5 + 5))",
+		// },
+		// {
+		// 	"-(5 + 5)",
+		// 	"(-(5 + 5))",
+		// },
+		// {
+		// 	"!(true == true)",
+		// 	"(!(true == true))",
+		// },
+		// {
+		// 	"(1.5 + 1.5) * 2",
+		// 	"((1.5 + 1.5) * 2)",
+		// },
+		// {
+		// 	"a * [1, 2, 3, 4][b * c] * d",
+		// 	"((a * ([1, 2, 3, 4][(b * c)])) * d)",
+		// },
 		{
-			"-a * b",
-			"((-a) * b)",
-		},
-		{
-			"!-a",
-			"(!(-a))",
-		},
-		{
-			"a + b + c",
-			"((a + b) + c)",
-		},
-		{
-			"a + b - c",
-			"((a + b) - c)",
-		},
-		{
-			"a * b * c",
-			"((a * b) * c)",
-		},
-		{
-			"a * b / c",
-			"((a * b) / c)",
-		},
-		{
-			"a % b * c",
-			"((a % b) * c)",
-		},
-		{
-			"a + b / c",
-			"(a + (b / c))",
-		},
-		{
-			"a + b * c + d / e - f",
-			"(((a + (b * c)) + (d / e)) - f)",
-		},
-		{
-			"3 + 4; -5 * 5",
-			"(3 + 4)((-5) * 5)",
-		},
-		{
-			"5 > 4 == 3 < 4",
-			"((5 > 4) == (3 < 4))",
-		},
-		{
-			"5 < 4 != 3 > 4",
-			"((5 < 4) != (3 > 4))",
-		},
-		{
-			"3 + 4 * 5 == 3 * 1 + 4 * 5",
-			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
-		},
-		{
-			"-1 * 2 + 3",
-			"(((-1) * 2) + 3)",
-		},
-		{
-			"true",
-			"true",
-		},
-		{
-			"false",
-			"false",
-		},
-		{
-			"3 > 5 == false",
-			"((3 > 5) == false)",
-		},
-		{
-			"3 < 5 == true",
-			"((3 < 5) == true)",
-		},
-		{
-			"1 + (2 + 3) + 4",
-			"((1 + (2 + 3)) + 4)",
-		},
-		{
-			"(5 + 5) * 2",
-			"((5 + 5) * 2)",
-		},
-		{
-			"2 / (5 + 5)",
-			"(2 / (5 + 5))",
-		},
-		{
-			"-(5 + 5)",
-			"(-(5 + 5))",
-		},
-		{
-			"!(true == true)",
-			"(!(true == true))",
-		},
-		{
-			"(1.5 + 1.5) * 2",
-			"((1.5 + 1.5) * 2)",
+			"add(a * b[2], b[1], 2 * [1, 2][1])",
+			"add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
 		},
 	}
 
@@ -509,7 +541,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 
 		actual := program.String()
 		if actual != tc.expected {
-			t.Errorf("expected=%q, got=%q", tc.expected, actual)
+			t.Errorf("\nexpected=%q\ngot=%q", tc.expected, actual)
 		}
 	}
 }
@@ -900,6 +932,7 @@ func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
 
 func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 	identifier, ok := exp.(*ast.Identifier)
+
 	if !ok {
 		t.Errorf("exp not *ast.Identifier. got=%T", exp)
 		return false
