@@ -87,19 +87,30 @@ func TestArrayLiterals(t *testing.T) {
 
 func TestBuiltinFunctions(t *testing.T) {
 	tests := []ExpectedTest[interface{}]{
+		// string len
 		{`len("")`, 0},
 		{`len("four")`, 4},
 		{`len("hello world")`, 11},
 		{`len(1)`, "argument to `len` not supported, got INTEGER"},
 		{`len("one", "two")`, "wrong number of arguments. got=2, expected=1"},
+
+		// array len
 		{`len([1, 2, 3])`, 3},
 		{`len([1, 2])`, 2},
 		{`len([1])`, 1},
 		{`len([])`, 0},
+
+		// array first
 		{`first([1, 2, 3])`, 1},
 		{`first([1])`, 1},
 		{`first()`, "wrong number of arguments.\nexpected=1, got=0"},
 		{`first(5)`, "argument to \"first\" must be an ARRAY type.\ngot INTEGER"},
+
+		// array last
+		{`last([1, 2, 3])`, 3},
+		{`last([1])`, 1},
+		{`last()`, "wrong number of arguments.\nexpected=1, got=0"},
+		{`last(5)`, "argument to \"last\" must be an ARRAY type.\ngot INTEGER"},
 	}
 
 	for _, tc := range tests {
