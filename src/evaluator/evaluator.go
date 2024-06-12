@@ -69,6 +69,27 @@ var builtins = map[string]*object.Builtin{
 			return NULL
 		},
 	},
+	"rest": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments.\nexpected=1, got=%d", len(args))
+			}
+
+			if args[0].Type() != object.ARRAY_OBJ {
+				return newError("argument to \"rest\" must be an ARRAY type.\ngot %s", args[0].Type())
+			}
+
+			arr := args[0].(*object.Array)
+			length := len(arr.Elements)
+			if length > 0 {
+				newElements := make([]object.Object, length-1)
+				copy(newElements, arr.Elements[1:length])
+				return &object.Array{Elements: newElements}
+			}
+
+			return NULL
+		},
+	},
 }
 
 // We need to pass the concrete type ast.Node, for all other structs that implements ast.Node to allow the "polymorphism" to work

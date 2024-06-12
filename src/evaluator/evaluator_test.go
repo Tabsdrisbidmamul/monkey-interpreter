@@ -111,6 +111,25 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`last([1])`, 1},
 		{`last()`, "wrong number of arguments.\nexpected=1, got=0"},
 		{`last(5)`, "argument to \"last\" must be an ARRAY type.\ngot INTEGER"},
+
+		// array rest
+		{
+			`rest([1, 2, 3])`,
+			&object.Array{
+				Elements: []object.Object{
+					&object.Integer{Value: 2},
+					&object.Integer{Value: 3},
+				},
+			},
+		},
+		{
+			`rest([1])`,
+			&object.Array{
+				Elements: []object.Object{},
+			},
+		},
+		{`rest()`, "wrong number of arguments.\nexpected=1, got=0"},
+		{`rest(5)`, "argument to \"rest\" must be an ARRAY type.\ngot INTEGER"},
 	}
 
 	for _, tc := range tests {
