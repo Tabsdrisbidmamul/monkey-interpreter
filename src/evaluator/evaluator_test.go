@@ -130,12 +130,32 @@ func TestBuiltinFunctions(t *testing.T) {
 		},
 		{`rest()`, "wrong number of arguments.\nexpected=1, got=0"},
 		{`rest(5)`, "argument to \"rest\" must be an ARRAY type.\ngot INTEGER"},
+
+		// array push
+		{
+			`push([], 2)`,
+			[]int64{2},
+		},
+		{
+			`push([1], 2)`,
+			[]int64{1, 2},
+		},
+		{
+			`push([])`,
+			"wrong number of arguments.\nexpected=2, got=1",
+		},
+		{
+			`push(5)`,
+			"argument to \"push\" must be an ARRAY type.\ngot INTEGER",
+		},
 	}
 
 	for _, tc := range tests {
 		evaluated := testEval(tc.input)
 
 		switch expected := tc.expected.(type) {
+		case []int64:
+			testArrayObject(t, evaluated, expected)
 		case int:
 			testIntegerObject(t, evaluated, int64(expected))
 		case string:
@@ -560,6 +580,26 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	if result.Value != expected {
 		t.Errorf("object has wrong value, got=%d, expected=%d", result.Value, expected)
 		return false
+	}
+
+	return true
+}
+
+func testArrayObject(t *testing.T, obj object.Object, expected []int64) bool {
+	result, ok := obj.(*object.Array)
+	if !ok {
+		t.Errorf("object is not Array. got=%T (%+v)", obj, obj)
+		return false
+	}
+
+	for index := range result.Elements {
+		expectedValue := expected[index]
+
+		actualValue := result.Elements[index].(*object.Integer).Value
+
+		if actualValue != expectedValue {
+			t.Errorf("actual Array.Elements has the wrong values\nexpected=%d at index=%d.\ngot=%d at index=%d", expectedValue, index, actualValue, index)
+		}
 	}
 
 	return true
