@@ -145,7 +145,7 @@ func TestBuiltinFunctions(t *testing.T) {
 			"wrong number of arguments.\nexpected=2, got=1",
 		},
 		{
-			`push(5)`,
+			`push(5, 5)`,
 			"argument to \"push\" must be an ARRAY type.\ngot INTEGER",
 		},
 	}
