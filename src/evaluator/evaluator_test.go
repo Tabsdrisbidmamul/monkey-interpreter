@@ -148,6 +148,28 @@ func TestBuiltinFunctions(t *testing.T) {
 			`push(5, 5)`,
 			"argument to \"push\" must be an ARRAY type.\ngot INTEGER",
 		},
+
+		// array pop
+		{
+			`pop([1, 2])`,
+			2,
+		},
+		{
+			`pop([1])`,
+			1,
+		},
+		{
+			`pop([])`,
+			"cannot pop an empty array",
+		},
+		{
+			`pop()`,
+			"wrong number of arguments.\nexpected=1, got=0",
+		},
+		{
+			`pop(5)`,
+			"argument to \"pop\" must be an ARRAY type.\ngot INTEGER",
+		},
 	}
 
 	for _, tc := range tests {

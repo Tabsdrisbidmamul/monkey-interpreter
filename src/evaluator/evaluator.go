@@ -103,14 +103,29 @@ var builtins = map[string]*object.Builtin{
 			arr := args[0].(*object.Array)
 			value := args[1]
 
-			newArray := make(
-				[]object.Object,
-				len(arr.Elements)+1,
-			)
-			copy(newArray, arr.Elements)
+			arr.Elements = append(arr.Elements, value)
+			return arr
+		},
+	},
+	"pop": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments.\nexpected=1, got=%d", len(args))
+			}
 
-			newArray[len(arr.Elements)] = value
-			return &object.Array{Elements: newArray}
+			if args[0].Type() != object.ARRAY_OBJ {
+				return newError("argument to \"pop\" must be an ARRAY type.\ngot %s", args[0].Type())
+			}
+
+			arr := args[0].(*object.Array)
+
+			if len(arr.Elements) <= 0 {
+				return newError("cannot pop an empty array")
+			}
+
+			lastElement := arr.Elements[len(arr.Elements)-1]
+			arr.Elements = arr.Elements[:len(arr.Elements)-1]
+			return lastElement
 		},
 	},
 }
