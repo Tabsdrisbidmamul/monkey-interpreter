@@ -52,6 +52,107 @@ type ExpectedInfixTest struct {
 	rightValue interface{}
 }
 
+func TestParsingHashLiteralsWithExpressions(t *testing.T) {
+	input := `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	statement := program.Statements[0].(*ast.ExpressionStatement)
+	hash, ok := statement.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("exp is not ast.HashLiteral. got=%T", statement.Expression)
+	}
+
+	if len(hash.Pairs) != 3 {
+		t.Errorf("hash.Pairs has wrong length. got=%d", len(hash.Pairs))
+	}
+
+	tests := map[string]func(ast.Expression){
+		"one": func(e ast.Expression) {
+			testInfixExpression(t, e, 0, "+", 1)
+		},
+		"two": func(e ast.Expression) {
+			testInfixExpression(t, e, 10, "-", 8)
+		},
+		"three": func(e ast.Expression) {
+			testInfixExpression(t, e, 15, "/", 5)
+		},
+	}
+
+	for key, value := range hash.Pairs {
+		literal, ok := key.(*ast.StringLiteral)
+		if !ok {
+			t.Errorf("key is not ast.StringLiteral. got=%T", key)
+			continue
+		}
+
+		testFunc, ok := tests[literal.String()]
+		if !ok {
+			t.Errorf("No test function for key %q found, expected key=%q", literal.String(), key)
+			continue
+		}
+
+		testFunc(value)
+	}
+}
+
+func TestParsingEmptyHashLiteral(t *testing.T) {
+	input := "{}"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	statement := program.Statements[0].(*ast.ExpressionStatement)
+	hash, ok := statement.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("expression is not ast.HashLiteral. got=%T", statement.Expression)
+	}
+
+	if len(hash.Pairs) != 0 {
+		t.Errorf("hash.Pairs expected length=0, got=%d", len(hash.Pairs))
+	}
+}
+
+func TestParsingHashLiteralStringKeys(t *testing.T) {
+	input := `{"one": 1, "two": 2, "three": 3}`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	statement := program.Statements[0].(*ast.ExpressionStatement)
+	hash, ok := statement.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("expression is not ast.HashLiteral, got=%T", statement.Expression)
+	}
+
+	if len(hash.Pairs) != 3 {
+		t.Errorf("hash.Pairs has wrong length.\nexpected=3, got=%d", len(hash.Pairs))
+	}
+
+	expected := map[string]int64{
+		"one":   1,
+		"two":   2,
+		"three": 3,
+	}
+
+	for key, value := range hash.Pairs {
+		literal, ok := key.(*ast.StringLiteral)
+		if !ok {
+			t.Errorf("key is not ast.StringLiteral, got=%T", key)
+		}
+
+		expectedValue := expected[literal.String()]
+		testIntegerLiteral(t, value, expectedValue)
+	}
+}
+
 func TestParsingIndexExpression(t *testing.T) {
 	input := "myArray[1 + 1]"
 
@@ -427,106 +528,106 @@ func TestBooleanExpression(t *testing.T) {
 
 func TestOperatorPrecedenceParsing(t *testing.T) {
 	tests := []ExpectedPrecedenceTest{
-		// {
-		// 	"-a * b",
-		// 	"((-a) * b)",
-		// },
-		// {
-		// 	"!-a",
-		// 	"(!(-a))",
-		// },
-		// {
-		// 	"a + b + c",
-		// 	"((a + b) + c)",
-		// },
-		// {
-		// 	"a + b - c",
-		// 	"((a + b) - c)",
-		// },
-		// {
-		// 	"a * b * c",
-		// 	"((a * b) * c)",
-		// },
-		// {
-		// 	"a * b / c",
-		// 	"((a * b) / c)",
-		// },
-		// {
-		// 	"a % b * c",
-		// 	"((a % b) * c)",
-		// },
-		// {
-		// 	"a + b / c",
-		// 	"(a + (b / c))",
-		// },
-		// {
-		// 	"a + b * c + d / e - f",
-		// 	"(((a + (b * c)) + (d / e)) - f)",
-		// },
-		// {
-		// 	"3 + 4; -5 * 5",
-		// 	"(3 + 4)((-5) * 5)",
-		// },
-		// {
-		// 	"5 > 4 == 3 < 4",
-		// 	"((5 > 4) == (3 < 4))",
-		// },
-		// {
-		// 	"5 < 4 != 3 > 4",
-		// 	"((5 < 4) != (3 > 4))",
-		// },
-		// {
-		// 	"3 + 4 * 5 == 3 * 1 + 4 * 5",
-		// 	"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
-		// },
-		// {
-		// 	"-1 * 2 + 3",
-		// 	"(((-1) * 2) + 3)",
-		// },
-		// {
-		// 	"true",
-		// 	"true",
-		// },
-		// {
-		// 	"false",
-		// 	"false",
-		// },
-		// {
-		// 	"3 > 5 == false",
-		// 	"((3 > 5) == false)",
-		// },
-		// {
-		// 	"3 < 5 == true",
-		// 	"((3 < 5) == true)",
-		// },
-		// {
-		// 	"1 + (2 + 3) + 4",
-		// 	"((1 + (2 + 3)) + 4)",
-		// },
-		// {
-		// 	"(5 + 5) * 2",
-		// 	"((5 + 5) * 2)",
-		// },
-		// {
-		// 	"2 / (5 + 5)",
-		// 	"(2 / (5 + 5))",
-		// },
-		// {
-		// 	"-(5 + 5)",
-		// 	"(-(5 + 5))",
-		// },
-		// {
-		// 	"!(true == true)",
-		// 	"(!(true == true))",
-		// },
-		// {
-		// 	"(1.5 + 1.5) * 2",
-		// 	"((1.5 + 1.5) * 2)",
-		// },
-		// {
-		// 	"a * [1, 2, 3, 4][b * c] * d",
-		// 	"((a * ([1, 2, 3, 4][(b * c)])) * d)",
-		// },
+		{
+			"-a * b",
+			"((-a) * b)",
+		},
+		{
+			"!-a",
+			"(!(-a))",
+		},
+		{
+			"a + b + c",
+			"((a + b) + c)",
+		},
+		{
+			"a + b - c",
+			"((a + b) - c)",
+		},
+		{
+			"a * b * c",
+			"((a * b) * c)",
+		},
+		{
+			"a * b / c",
+			"((a * b) / c)",
+		},
+		{
+			"a % b * c",
+			"((a % b) * c)",
+		},
+		{
+			"a + b / c",
+			"(a + (b / c))",
+		},
+		{
+			"a + b * c + d / e - f",
+			"(((a + (b * c)) + (d / e)) - f)",
+		},
+		{
+			"3 + 4; -5 * 5",
+			"(3 + 4)((-5) * 5)",
+		},
+		{
+			"5 > 4 == 3 < 4",
+			"((5 > 4) == (3 < 4))",
+		},
+		{
+			"5 < 4 != 3 > 4",
+			"((5 < 4) != (3 > 4))",
+		},
+		{
+			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+		{
+			"-1 * 2 + 3",
+			"(((-1) * 2) + 3)",
+		},
+		{
+			"true",
+			"true",
+		},
+		{
+			"false",
+			"false",
+		},
+		{
+			"3 > 5 == false",
+			"((3 > 5) == false)",
+		},
+		{
+			"3 < 5 == true",
+			"((3 < 5) == true)",
+		},
+		{
+			"1 + (2 + 3) + 4",
+			"((1 + (2 + 3)) + 4)",
+		},
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
+		{
+			"2 / (5 + 5)",
+			"(2 / (5 + 5))",
+		},
+		{
+			"-(5 + 5)",
+			"(-(5 + 5))",
+		},
+		{
+			"!(true == true)",
+			"(!(true == true))",
+		},
+		{
+			"(1.5 + 1.5) * 2",
+			"((1.5 + 1.5) * 2)",
+		},
+		{
+			"a * [1, 2, 3, 4][b * c] * d",
+			"((a * ([1, 2, 3, 4][(b * c)])) * d)",
+		},
 		{
 			"add(a * b[2], b[1], 2 * [1, 2][1])",
 			"add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",

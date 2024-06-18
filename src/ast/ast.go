@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
 	"monkey/token"
 	"strings"
 )
@@ -254,12 +255,12 @@ func (ife *IfExpression) String() string {
 	return out.String()
 }
 
+// implements Statements
 type BlockStatement struct {
 	Token      token.Token
 	Statements []Statement
 }
 
-// implements Statements
 func (bs *BlockStatement) statementNode() {}
 func (bs *BlockStatement) TokenLiteral() string {
 	return bs.Token.Literal
@@ -274,6 +275,7 @@ func (bs *BlockStatement) String() string {
 	return out.String()
 }
 
+// implements Expression
 type ElseIfExpression struct {
 	Token token.Token
 	// Else if part
@@ -281,7 +283,6 @@ type ElseIfExpression struct {
 	Consequence *BlockStatement
 }
 
-// implements Expression
 func (eif *ElseIfExpression) expressionNode() {}
 func (eif *ElseIfExpression) TokenLiteral() string {
 	return eif.Token.Literal
@@ -362,6 +363,7 @@ func (sl *StringLiteral) expressionNode()      {}
 func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
 func (sl *StringLiteral) String() string       { return sl.Token.Literal }
 
+// implements Expression
 type ArrayLiteral struct {
 	Token    token.Token // the '[' token
 	Elements []Expression
@@ -384,6 +386,7 @@ func (al *ArrayLiteral) String() string {
 	return out.String()
 }
 
+// implements Expression
 type IndexExpression struct {
 	Token token.Token // The [ token
 	Left  Expression
@@ -407,4 +410,23 @@ func (ie *IndexExpression) String() string {
 type HashLiteral struct {
 	Token token.Token // the '{' token
 	Pairs map[Expression]Expression
+}
+
+// implements Expression
+func (hl *HashLiteral) expressionNode() {}
+func (hl *HashLiteral) TokenLiteral() string {
+	return hl.Token.Literal
+}
+func (hl *HashLiteral) String() string {
+	var out bytes.Buffer
+
+	pairs := []string{}
+	for key, value := range hl.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s : %s", key.String(), value.String()))
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+	return out.String()
 }
